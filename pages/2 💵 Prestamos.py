@@ -1,0 +1,94 @@
+import streamlit as st
+import pandas as pd
+import Funciones
+
+st.set_page_config(layout="wide")
+
+st.session_state['preguntar clave'] = True
+
+df = pd.read_csv(st.session_state.nombre_df)
+
+index = st.session_state.usuario_actual
+
+index_de_usuario = st.sidebar.number_input('Numero de usuario.', value=0, step=1)
+
+if st.sidebar.button('Buscar'):
+    if 0 <= index_de_usuario < st.session_state.usuarios:
+        st.session_state.usuario_actual = index_de_usuario
+        st.rerun()
+    else:
+        st.error('El numero de usuario esta fuera de rango.', icon="🚨")
+
+if index == -1:
+    st.title('Usuario Indeterminado')
+else:
+    st.title(f'№ {index} - {df['nombre'][index].title()}')
+
+    prestamos_hechos = df['prestamos hechos'][index]
+    capital = df['capital'][index]
+
+    deudas_en_prestamos = df['deudas en prestamos'][index]
+    tabla_por_prestamos = {}
+    if deudas_en_prestamos != '-':
+        deudas_en_prestamos = list(map(int, deudas_en_prestamos.split('-')))
+        k = 1
+        for i in deudas_en_prestamos:
+            tabla_por_prestamos[str(k)] = i
+            k += 1
+        tabla_por_prestamos['Total'] = sum(deudas_en_prestamos)
+    else:
+        tabla_por_prestamos['Total'] = 0
+
+    deudas_por_fiador = df['deudas por fiador'][index]
+    tabla_por_fiador = {}
+    if deudas_por_fiador != '-':
+        deudas_por_fiador = list(map(int, deudas_por_fiador.split('-')))
+        k = 1
+        for i in deudas_por_fiador:
+            tabla_por_fiador[str(k)] = i
+            k += 1
+        tabla_por_fiador['Total'] = sum(deudas_por_fiador)
+    else:
+        tabla_por_fiador['Total'] = 0
+
+    interese_vencidos = df['intereses vencidos'][index]
+    tabla_interese = {}
+    if interese_vencidos != '-':
+        interese_vencidos = list(map(float, interese_vencidos.split('-')))
+        k = 1
+        for i in interese_vencidos:
+            tabla_interese[str(k)] = i
+            k += 1
+        tabla_interese['Total'] = sum(interese_vencidos)
+    else:
+        tabla_interese['Total'] = 0
+
+    capital_disponible = int(capital*0.75 - tabla_por_prestamos['Total'] - tabla_por_fiador['Total'] -
+                             tabla_interese['Total'])
+
+    tab_1, tab_2, tab_3 = st.tabs(['Ver prestamos', 'Solicitar un prestamo', 'Consultar capital'])
+
+    with tab_1:
+        st.title('Ver prestamos actuales.')
+
+    with tab_2:
+        st.write('Solicitar un prestamo.')
+
+    with tab_3:
+        st.subheader('Capital.')
+        st.write(f'capital guardado: {"{:,}".format(capital)}')
+        st.write(f'Capital disponible para retirar: {"{:,}".format(int(capital*0.75))}')
+
+        st.subheader('Descuentos.')
+
+        st.write('Descuentos por prestamos.')
+        st.table(tabla_por_prestamos)
+
+        st.write('Descuentos por fiador.')
+        st.table(tabla_por_fiador)
+
+        st.write('Descuentos por prestamos vencidos.')
+        st.table(tabla_interese)
+
+        st.header(f'Capital disponible para retirar: {"{:,}".format(capital_disponible)}')
+
