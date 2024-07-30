@@ -181,8 +181,9 @@ def crear_data_frame_principal():
 def crear_ajustes_de_el_programa():
     ajustes = {'valor multa': 3000,
                'valor cuota': 10000,
-               'interes < 20M': 0.03,
-               'interes > 20M': 0.02,
+               'interes < tope': 0.03,
+               'interes > tope': 0.02,
+               'tope de intereses': 20000000,
                'clave de acceso': '1234',
                'calendario': '-',
                'usuarios': 11,
