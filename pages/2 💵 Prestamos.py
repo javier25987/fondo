@@ -70,7 +70,6 @@ else:
     fiadores = str(df['fiadores'][index]).split('-')
     deudas_con_fiadores = str(df['deudas con fiadores'][index]).split('-')
     fechas_de_pago = str(df['fechas de pagos'][index]).split('-')
-    meses_para_pagar = str(df['meses para pagar'][index]).split('-')
 
     tab_1, tab_2, tab_3 = st.tabs(['Ver prestamos', 'Solicitar un prestamo', 'Consultar capital'])
 
