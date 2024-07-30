@@ -639,15 +639,13 @@ def viavilidad_dinero(index: int, valor_de_el_prestamo: int, fiadores: str = '',
             n_fiadores = list(map(lambda x: int(x), fiadores.split(',')))
             n_deudas = list(map(lambda x: int(x), deudas_con_fiadores.split(',')))
 
-            k = 0
-            for i in n_fiadores:
+            for i, j in zip(n_fiadores, n_deudas):
                 temporal_capital = consultar_capital(i)
-                if temporal_capital <= n_deudas[k]:
+                if temporal_capital <= j:
                     break
-                k += 1
             else:
                 suma_de_deudas = sum(n_deudas)
-                if capital + suma_de_deudas > valor_de_el_prestamo:
+                if (capital + suma_de_deudas) >= valor_de_el_prestamo:
                     return True
                 else:
                     return False
