@@ -446,12 +446,19 @@ def crear_nuevo_cheque(nombre: str = '', numero: int = 0, multas_pagadas: int = 
     with open('cheque_de_cuotas.txt', 'w', encoding='utf_8') as f:
         f.write(''.join(cheque))
 
-def calendario_n_meses(n: int):
+def calendario_n_meses():
+    with open('ajustes.json', 'r') as f:
+        ajustes = json.load(f)
+
+    clos_data = ajustes['fecha de cierre']
+    clos_data = list(map(lambda x: int(x), clos_data.split('/')))
+    clos_data = datetime.datetime(*clos_data)
+
     now = datetime.datetime.now()
     fechas = []
 
     if now.day > 28:
-        for i in range(1, n + 1):
+        for i in range(1, 20):
             n_now = now
             while True:
                 try:
@@ -459,12 +466,20 @@ def calendario_n_meses(n: int):
                     break
                 except:
                     n_now = n_now - datetime.timedelta(days=1)
-            fechas.append(new_now)
+
+            if new_now < clos_data:
+                fechas.append(new_now)
+            else:
+                break
     else:
-        for i in range(1, n + 1):
+        for i in range(1, 20):
             n_now = now
             new_now = n_now.replace(month=now.month + i)
-            fechas.append(new_now)
+
+            if new_now < clos_data:
+                fechas.append(new_now)
+            else:
+                break
 
     fechas = list(map(lambda x: x.strftime('%Y/%m/%d'), fechas))
     fechas = ','.join(fechas)
@@ -529,7 +544,7 @@ def consultar_capital(index):
 
     return capital_disponible
 
-def generar_prestamo(index: int, valor_de_el_prestamo: int, cuotas: int, fiadores: str = '', deudas_con_fiadores: str = ''):
+def generar_prestamo(index: int, valor_de_el_prestamo: int, fiadores: str = '', deudas_con_fiadores: str = ''):
     df = pd.read_csv(st.session_state.nombre_df)
 
     with open('ajustes.json', 'r') as f:
@@ -546,26 +561,12 @@ def generar_prestamo(index: int, valor_de_el_prestamo: int, cuotas: int, fiadore
         deudas_en_prestamos +=  f'-{str(valor_de_el_prestamo)}'
     df.loc[index, 'deudas en prestamos'] = deudas_en_prestamos
 
-    cuota_de_prestamo = str(df['cuota de prestamo'][index])
-    if cuota_de_prestamo == '-':
-        cuota_de_prestamo = str(int(valor_de_el_prestamo/cuotas))
-    else:
-        cuota_de_prestamo += f'-{str(int(valor_de_el_prestamo/cuotas))}'
-    df.loc[index, 'cuota de prestamo'] = cuota_de_prestamo
-
     intereses_vencidos = str(df['intereses vencidos'][index])
     if intereses_vencidos == '-':
         intereses_vencidos = '0'
     else:
         intereses_vencidos += '-0'
     df.loc[index, 'intereses vencidos'] = intereses_vencidos
-
-    meses_para_pagar = str(df['meses para pagar'][index])
-    if meses_para_pagar == '-':
-        meses_para_pagar = str(cuotas)
-    else:
-        meses_para_pagar += f'-{str(cuotas)}'
-    df.loc[index, 'meses para pagar'] = meses_para_pagar
 
     revisiones_de_intereses = str(df['revisiones de intereses'][index])
     if revisiones_de_intereses == '-':
@@ -587,7 +588,7 @@ def generar_prestamo(index: int, valor_de_el_prestamo: int, cuotas: int, fiadore
     df.loc[index, 'intereses en prestamos'] = interes
 
     fechas_de_pagos = str(df['fechas de pagos'][index])
-    n_fechas = calendario_n_meses(cuotas)
+    n_fechas = calendario_n_meses()
     if fechas_de_pagos == '-':
         fechas_de_pagos = n_fechas
     else:
@@ -623,20 +624,6 @@ def generar_prestamo(index: int, valor_de_el_prestamo: int, cuotas: int, fiadore
     df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
 
     df.to_csv(st.session_state.nombre_df)
-
-def viavilidad_tiepo(cuotas: int):
-    with open('ajustes.json', 'r') as f:
-        ajustes = json.load(f)
-
-    ultima_f = fecha_string_formato(ajustes['fecha de cierre'])
-
-    fechas_p = calendario_n_meses(cuotas).split(',')
-    fechas_p = list(map(fecha_string_formato, fechas_p))
-
-    if fechas_p[-1] > ultima_f:
-        return False
-    else:
-        return True
 
 def viavilidad_dinero(index: int, valor_de_el_prestamo: int, fiadores: str = '',
                       deudas_con_fiadores: str = ''):
@@ -696,8 +683,7 @@ def escribir_deudas_fiadores(index: int, fiadores: str, deudas_con_fiadores: str
     df.to_csv(st.session_state.nombre_df)
 
 @st.experimental_dialog("Formulario de prestamo.")
-def formato_de_prestamo(index: int, cuotas: int, valor_de_el_prestamo: int, fiadores: str,
-                        deudas_con_fiadores: str):
+def formato_de_prestamo(index: int, valor_de_el_prestamo: int, fiadores: str, deudas_con_fiadores: str):
     df = pd.read_csv(st.session_state.nombre_df)
 
     st.header(f'№ {index} - {df['nombre'][index].title()}')
@@ -718,8 +704,7 @@ def formato_de_prestamo(index: int, cuotas: int, valor_de_el_prestamo: int, fiad
     st.write(f'Dinero a entregar: {'{:,}'.format(int(valor_de_el_prestamo*(1-interes)))}')
 
     st.divider()
-    st.write(f'Meses para pagar el prestamo: {cuotas}')
-    fechas_de_pago = calendario_n_meses(cuotas).split(',')
+    fechas_de_pago = calendario_n_meses().split(',')
     st.write('Fechas de cuotas:')
     for i in fechas_de_pago:
         st.write(i)
@@ -730,7 +715,7 @@ def formato_de_prestamo(index: int, cuotas: int, valor_de_el_prestamo: int, fiad
     st.divider()
 
     if st.button('confirmar'):
-        generar_prestamo(index=index, cuotas=cuotas, valor_de_el_prestamo=valor_de_el_prestamo,
+        generar_prestamo(index=index, valor_de_el_prestamo=valor_de_el_prestamo,
                          fiadores=fiadores, deudas_con_fiadores=deudas_con_fiadores)
         if (fiadores == '') or (deudas_con_fiadores == ''):
             pass

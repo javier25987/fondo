@@ -86,14 +86,12 @@ else:
                               'intereses vencidos': interese_vencidos[k],
                               'numero(s) de fiador(es)': fiadores[k],
                               'deuda(s) con fiador(es)': deudas_con_fiadores[k],
-                              'numero de cuotas': meses_para_pagar[k],
                               'fechas de pago': fechas_de_pago[k]})
                 k += 1
 
     with tab_2:
         st.header('Formulario para la solicitud de un prestamo')
         valor_de_el_prestamo = st.number_input('Dinero a retirar.', value=0, step=1)
-        cuotas = st.number_input('Meses en los que se paga el prestamo.', value=0, step=1)
 
         st.divider()
         ide_fiadores = st.text_input('Fiadores de el prestamo')
@@ -101,20 +99,10 @@ else:
 
         st.divider()
         if st.button('Tramitar prestamo'):
-            if valor_de_el_prestamo < 0 or cuotas < 1:
+            if valor_de_el_prestamo < 0:
                 if valor_de_el_prestamo < 0:
                     st.error('Creo que no se puede dar esa cantidad de dinero.', icon="🚨")
-                if cuotas < 1:
-                    st.error('si tienes menos de una cuota no creo que quieran pagar el prestamo.',
-                             icon="🚨")
             else:
-                control_timpo = False
-                if Funciones.viavilidad_tiepo(cuotas=cuotas):
-                    control_timpo =True
-                    st.success('las fechas para el pago no exenden la fecha de cierre.', icon="✅")
-                else:
-                    st.error('El prestamo no puede ser pagado depues de la fecha de cierre.', icon="🚨")
-
                 control_dinero = False
                 if Funciones.viavilidad_dinero(index=index, valor_de_el_prestamo=valor_de_el_prestamo,
                                                fiadores=ide_fiadores, deudas_con_fiadores=ide_deudas_con_fiadores):
@@ -129,11 +117,10 @@ else:
                         icon="🚨"
                     )
 
-                if control_dinero and control_timpo:
+                if control_dinero:
                     st.balloons()
                     Funciones.formato_de_prestamo(index=index, valor_de_el_prestamo=valor_de_el_prestamo,
-                                                  cuotas=cuotas, fiadores=ide_fiadores,
-                                                  deudas_con_fiadores=ide_deudas_con_fiadores)
+                                                  fiadores=ide_fiadores, deudas_con_fiadores=ide_deudas_con_fiadores)
 
     with tab_3:
         st.subheader('Capital.')

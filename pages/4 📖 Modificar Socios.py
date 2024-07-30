@@ -72,9 +72,9 @@ else:
 
         columna_col = st.selectbox('Columna a modificar', ('nombre', 'puestos', 'numero_telefonico', 'revisiones', 'cuotas', 'multas',
                                    'tesorero', 'estado', 'capital', 'aporte_a_multas', 'deudas', 'multas_extra', 'prestamos hechos',
-                                   'deudas en prestamos','intereses vencidos', 'meses para pagar','revisiones de intereses',
+                                   'deudas en prestamos','intereses vencidos','revisiones de intereses',
                                    'intereses en prestamos', 'fiadores', 'deudas con fiadores', 'fechas de pagos', 'deudas por fiador',
-                                   'fiador de'))
+                                   'fiador de', 'anotaciones'))
 
         st.subheader('Modificar texto.')
 
@@ -83,7 +83,7 @@ else:
         if st.button('Modificar texto'):
             if columna_col in ['nombre', 'cuotas', 'multas', 'tesorero', 'estado', 'numero_telefonico', 'deudas en prestamos',
                                'intereses en prestamos', 'fiadores', 'deudas con fiadores', 'fechas de pagos', 'deudas por fiador',
-                               'intereses vencidos', 'meses para pagar', 'revisiones de intereses', 'fiador de']:
+                               'intereses vencidos', 'revisiones de intereses', 'fiador de', 'anotaciones']:
                 df.at[index_row, columna_col] = str(nuevo_valor_texto)
                 df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
                 df.to_csv(st.session_state.nombre_df)
