@@ -64,6 +64,7 @@ def insertar_socios(nombre: str = '', puestos: int = 1, numero_telefonico: str =
         'prestamos hechos': [0],
         'deudas en prestamos': ['-'],
         'intereses vencidos': ['-'],
+        'meses para pagar': ['-'],
         'revisiones de intereses': ['-'],
         'intereses en prestamos': ['-'],
         'fiadores': ['-'],
@@ -162,6 +163,7 @@ def crear_data_frame_principal():
             'prestamos hechos': [],
             'deudas en prestamos': [],
             'intereses vencidos': [],
+            'meses para pagar': [],
             'revisiones de intereses': [],
             'intereses en prestamos': [],
             'fiadores': [],
@@ -464,7 +466,7 @@ def calendario_n_meses(n: int):
             fechas.append(new_now)
 
     fechas = list(map(lambda x: x.strftime('%Y/%m/%d'), fechas))
-    fechas = '-'.join(fechas)
+    fechas = ','.join(fechas)
     return  fechas
 
 def modificar_str_compuesto_simple(s: str, index: int, nuevo_valor: str):
@@ -526,12 +528,94 @@ def consultar_capital(index):
 
     return capital_disponible
 
+def arregrar_asuntos_de_prestamos(index: int):
+    df = pd.read_csv(st.session_state.nombre_df)
+    pass
 
+def generar_prestamo(index: int, valor_de_el_prestamo: int, cuotas: int, fiadores: str = '', deudas_con_fiadores: str = ''):
+    df = pd.read_csv(st.session_state.nombre_df)
 
+    with open('ajustes.json', 'r') as f:
+        ajustes = json.load(f)
 
+    prestamos_hechos = int(df['prestamos hechos'][index])
+    prestamos_hechos += 1
+    df.loc[index, 'prestamos hechos'] = prestamos_hechos
 
+    deudas_en_prestamos = str(df['deudas en prestamos'][index])
+    if deudas_en_prestamos == '-':
+        deudas_en_prestamos = str(valor_de_el_prestamo)
+    else:
+        deudas_en_prestamos +=  f'-{str(valor_de_el_prestamo)}'
+    df.loc[index, 'deudas en prestamos'] = deudas_en_prestamos
 
+    intereses_vencidos = str(df['intereses vencidos'][index])
+    if intereses_vencidos == '-':
+        intereses_vencidos = '0'
+    else:
+        intereses_vencidos += '-0'
+    df.loc[index, 'intereses vencidos'] = intereses_vencidos
 
+    meses_para_pagar = str(df['meses para pagar'][index])
+    if meses_para_pagar == '-':
+        meses_para_pagar = str(cuotas)
+    else:
+        meses_para_pagar += f'-{str(cuotas)}'
+    df.loc[index, 'meses para pagar'] = meses_para_pagar
 
+    revisiones_de_intereses = str(df['revisiones de intereses'][index])
+    if revisiones_de_intereses == '-':
+        revisiones_de_intereses = '0'
+    else:
+        revisiones_de_intereses += '-0'
+    df.loc[index, 'revisiones de intereses'] = revisiones_de_intereses
 
+    interes = str(df['intereses en prestamos'][index])
+    n_interes = str(ajustes['interes < tope'])
 
+    if valor_de_el_prestamo > ajustes['tope de intereses']:
+        n_interes = str(ajustes['interes > tope'])
+
+    if interes == '-':
+        interes = n_interes
+    else:
+        interes += f'-{n_interes}'
+    df.loc[index, 'intereses en prestamos'] = interes
+
+    fechas_de_pagos = str(df['fechas de pagos'][index])
+    n_fechas = calendario_n_meses(cuotas)
+    if fechas_de_pagos == '-':
+        fechas_de_pagos = n_fechas
+    else:
+        fechas_de_pagos += f'-{n_fechas}'
+    df.loc[index, 'fechas de pagos'] = fechas_de_pagos
+
+    n_fiadores = str(df['fiadores'][index])
+    if fiadores != '':
+        if n_fiadores == '-':
+            n_fiadores = fiadores
+        else:
+            n_fiadores += f'-{fiadores}'
+    else:
+        if n_fiadores == '-':
+            n_fiadores = 'n'
+        else:
+            n_fiadores += '-n'
+    df.loc[index, 'fiadores'] = n_fiadores
+
+    deuda_con_fiadores = str(df['deudas con fiadores'][index])
+    if deudas_con_fiadores != '':
+        if deuda_con_fiadores == '-':
+            deuda_con_fiadores = deudas_con_fiadores
+        else:
+            deuda_con_fiadores += f'-{deudas_con_fiadores}'
+    else:
+        if deuda_con_fiadores == '-':
+            deuda_con_fiadores = 'n'
+        else:
+            deuda_con_fiadores += '-n'
+    df.loc[index, 'deudas con fiadores'] = deuda_con_fiadores
+
+    df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
+
+    df.to_csv(st.session_state.nombre_df)
