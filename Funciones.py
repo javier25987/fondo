@@ -64,14 +64,14 @@ def insertar_socios(nombre: str = '', puestos: int = 1, numero_telefonico: str =
         'prestamos hechos': [0],
         'deudas en prestamos': ['-'],
         'intereses vencidos': ['-'],
-        'meses para pagar': ['-'],
         'revisiones de intereses': ['-'],
         'intereses en prestamos': ['-'],
         'fiadores': ['-'],
         'deudas con fiadores': ['-'],
         'fechas de pagos': ['-'],
         'deudas por fiador': ['-'],
-        'fiador de': ['-']
+        'fiador de': ['-'],
+        'anotaciones': ['-']
     })
 
     data_frame = pd.read_csv(nombre_data_frame)
@@ -163,14 +163,14 @@ def crear_data_frame_principal():
             'prestamos hechos': [],
             'deudas en prestamos': [],
             'intereses vencidos': [],
-            'meses para pagar': [],
             'revisiones de intereses': [],
             'intereses en prestamos': [],
             'fiadores': [],
             'deudas con fiadores': [],
             'fechas de pagos': [],
             'deudas por fiador': [],
-            'fiador de': []
+            'fiador de': [],
+            'anotaciones': []
         })
 
         df.to_csv(nombre)
@@ -187,7 +187,8 @@ def crear_ajustes_de_el_programa():
                'calendario': '-',
                'usuarios': 11,
                'anular usuarios': False,
-               'cobrar multas': False}
+               'cobrar multas': False,
+               'fecha de cierre': '2024/12/01'}
 
     with open('ajustes.json', 'w') as j_a:
         json.dump(ajustes, j_a)
@@ -528,10 +529,6 @@ def consultar_capital(index):
 
     return capital_disponible
 
-def arregrar_asuntos_de_prestamos(index: int):
-    df = pd.read_csv(st.session_state.nombre_df)
-    pass
-
 def generar_prestamo(index: int, valor_de_el_prestamo: int, cuotas: int, fiadores: str = '', deudas_con_fiadores: str = ''):
     df = pd.read_csv(st.session_state.nombre_df)
 
@@ -548,6 +545,13 @@ def generar_prestamo(index: int, valor_de_el_prestamo: int, cuotas: int, fiadore
     else:
         deudas_en_prestamos +=  f'-{str(valor_de_el_prestamo)}'
     df.loc[index, 'deudas en prestamos'] = deudas_en_prestamos
+
+    cuota_de_prestamo = str(df['cuota de prestamo'][index])
+    if cuota_de_prestamo == '-':
+        cuota_de_prestamo = str(int(valor_de_el_prestamo/cuotas))
+    else:
+        cuota_de_prestamo += f'-{str(int(valor_de_el_prestamo/cuotas))}'
+    df.loc[index, 'cuota de prestamo'] = cuota_de_prestamo
 
     intereses_vencidos = str(df['intereses vencidos'][index])
     if intereses_vencidos == '-':
@@ -619,3 +623,118 @@ def generar_prestamo(index: int, valor_de_el_prestamo: int, cuotas: int, fiadore
     df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
 
     df.to_csv(st.session_state.nombre_df)
+
+def viavilidad_tiepo(cuotas: int):
+    with open('ajustes.json', 'r') as f:
+        ajustes = json.load(f)
+
+    ultima_f = fecha_string_formato(ajustes['fecha de cierre'])
+
+    fechas_p = calendario_n_meses(cuotas).split(',')
+    fechas_p = list(map(fecha_string_formato, fechas_p))
+
+    if fechas_p[-1] > ultima_f:
+        return False
+    else:
+        return True
+
+def viavilidad_dinero(index: int, valor_de_el_prestamo: int, fiadores: str = '',
+                      deudas_con_fiadores: str = ''):
+    capital = consultar_capital(index=index)
+
+    if (fiadores == '') and (deudas_con_fiadores == ''):
+        if capital > valor_de_el_prestamo:
+            return True
+        else:
+            return False
+    else:
+        try:
+            n_fiadores = list(map(lambda x: int(x), fiadores.split(',')))
+            n_deudas = list(map(lambda x: int(x), deudas_con_fiadores.split(',')))
+
+            k = 0
+            for i in n_fiadores:
+                temporal_capital = consultar_capital(i)
+                if temporal_capital <= n_deudas[k]:
+                    break
+                k += 1
+            else:
+                suma_de_deudas = sum(n_deudas)
+                if capital + suma_de_deudas > valor_de_el_prestamo:
+                    return True
+                else:
+                    return False
+            return False
+        except:
+            return False
+
+def escribir_deudas_fiadores(index: int, fiadores: str, deudas_con_fiadores: str):
+    df = pd.read_csv(st.session_state.nombre_df)
+
+    fiadores = list(map(lambda x: int(x), fiadores.split(',')))
+    deudas_con_fiadores = list(map(lambda x: str(x), deudas_con_fiadores.split(',')))
+
+    index = str(index)
+
+    for i, j in zip(fiadores, deudas_con_fiadores):
+        fiador_de = df['fiador de'][i]
+        if fiador_de == '-':
+            fiador_de = index
+        else:
+            fiador_de += f'-{index}'
+        df.loc[i, 'fiador de'] = fiador_de
+
+        deudas_con = df['deudas por fiador'][i]
+        if deudas_con == '-':
+            deudas_con = j
+        else:
+            deudas_con += f'-{j}'
+        df.loc[i, 'deudas por fiador'] = deudas_con
+
+    df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
+
+    df.to_csv(st.session_state.nombre_df)
+
+@st.experimental_dialog("Formulario de prestamo.")
+def formato_de_prestamo(index: int, cuotas: int, valor_de_el_prestamo: int, fiadores: str,
+                        deudas_con_fiadores: str):
+    df = pd.read_csv(st.session_state.nombre_df)
+
+    st.header(f'№ {index} - {df['nombre'][index].title()}')
+    st.divider()
+
+    st.write(f'Valor de el prestamo: {'{:,}'.format(valor_de_el_prestamo)}')
+
+    with open('ajustes.json', 'r') as f:
+        ajustes = json.load(f)
+
+    interes = ajustes['interes < tope']
+
+    if ajustes['tope de intereses'] < valor_de_el_prestamo:
+        interes = ajustes['interes > tope']
+
+    st.write(f'Interes por prestamo: {interes}')
+
+    st.write(f'Dinero a entregar: {'{:,}'.format(int(valor_de_el_prestamo*(1-interes)))}')
+
+    st.divider()
+    st.write(f'Meses para pagar el prestamo: {cuotas}')
+    fechas_de_pago = calendario_n_meses(cuotas).split(',')
+    st.write('Fechas de cuotas:')
+    for i in fechas_de_pago:
+        st.write(i)
+
+    st.divider()
+    st.write(f'Fiadores: {fiadores}')
+    st.write(f'Deudas con fiadores: {deudas_con_fiadores}')
+    st.divider()
+
+    if st.button('confirmar'):
+        generar_prestamo(index=index, cuotas=cuotas, valor_de_el_prestamo=valor_de_el_prestamo,
+                         fiadores=fiadores, deudas_con_fiadores=deudas_con_fiadores)
+        if (fiadores == '') or (deudas_con_fiadores == ''):
+            pass
+        else:
+            escribir_deudas_fiadores(index=index, fiadores=fiadores,
+                                 deudas_con_fiadores=deudas_con_fiadores)
+        st.rerun()

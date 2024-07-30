@@ -30,13 +30,13 @@ with tab_1:
 
 with tab_2:
 
-    index = st.session_state.usuario_actual
+    index = st.session_state.usuario_actual_ver
 
     index_de_usuario = st.sidebar.number_input('Numero de usuario.', value=0, step=1)
 
     if st.sidebar.button('Buscar', key='00011'):
         if 0 <= index_de_usuario < st.session_state.usuarios:
-            st.session_state.usuario_actual = index_de_usuario
+            st.session_state.usuario_actual_ver = index_de_usuario
             st.rerun()
         else:
             st.error('El numero de usuario esta fuera de rango.', icon="🚨")

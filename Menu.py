@@ -25,7 +25,9 @@ st.session_state.nombre_df = nombre_dataframe
 
 st.session_state.nombre_para_busqueda = ''
 
-st.session_state.usuario_actual = -1
+st.session_state.usuario_actual_cuotas = -1
+st.session_state.usuario_actual_prestamos = -1
+st.session_state.usuario_actual_ver = -1
 
 st.title('Menu de inicio')
 

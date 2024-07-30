@@ -75,7 +75,7 @@ else:
         with open('ajustes.json', 'r') as f:
             ajustes = json.load(f)
 
-        tab_1, tab_2, tab_3, tab_4, tab_5 = st.tabs(['Calendario', 'Cuotas y multas', 'Contraseñas', 'Intereses', 'Usuarios'])
+        tab_1, tab_2, tab_3, tab_4, tab_5, tab_6 = st.tabs(['Calendario', 'Cuotas y multas', 'Contraseñas', 'Intereses', 'Usuarios', 'fechas'])
 
         with tab_1:
             st.header('Calendario')
@@ -291,6 +291,23 @@ else:
                 cobra_multas = not cobra_multas
                 st.session_state.cobrar_multas = cobra_multas
                 ajustes['cobrar multas'] = cobra_multas
+
+                with open('ajustes.json', 'w') as f:
+                    json.dump(ajustes, f)
+
+                st.success('Valor modificado.', icon="✅")
+                st.rerun()
+
+        with tab_6:
+            st.subheader(f'Fecha de cierre.')
+
+            st.write(f'Fecha de cierre actual: {ajustes['fecha de cierre']}')
+
+            n_fecha = st.date_input('Nueva fecha de cierre.')
+
+            if st.button('Modificar', key='000014'):
+                n_fecha = n_fecha.strftime('%Y/%m/%d')
+                ajustes['fecha de cierre'] = n_fecha
 
                 with open('ajustes.json', 'w') as f:
                     json.dump(ajustes, f)

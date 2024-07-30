@@ -9,7 +9,7 @@ st.session_state['preguntar clave'] = True
 
 df = pd.read_csv(st.session_state.nombre_df)
 
-index = st.session_state.usuario_actual
+index = st.session_state.usuario_actual_cuotas
 
 index_de_usuario = st.sidebar.number_input('Numero de usuario.', value=0, step=1)
 
@@ -22,7 +22,7 @@ if st.sidebar.button('Buscar'):
             st.error('No se ha pagado la cuota por 3 semanas, el usuario ha sido desactivado.', icon="🚨")
 
         if df['estado'][index_de_usuario] == 'activo':
-            st.session_state.usuario_actual = index_de_usuario
+            st.session_state.usuario_actual_cuotas = index_de_usuario
             st.rerun()
         else:
             st.error('Me temo que el usuario esta desactivado.', icon="🚨")
