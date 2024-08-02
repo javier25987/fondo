@@ -62,6 +62,7 @@ def insertar_socios(nombre: str = '', puestos: int = 1, numero_telefonico: str =
         'multas_extra': [0],
         'numero_telefonico': [numero_telefonico],
         'prestamos hechos': [0],
+        'dinero en prestamos': [0],
         'deudas en prestamos': ['-'],
         'intereses vencidos': ['-'],
         'revisiones de intereses': ['-'],
@@ -69,7 +70,7 @@ def insertar_socios(nombre: str = '', puestos: int = 1, numero_telefonico: str =
         'fiadores': ['-'],
         'deudas con fiadores': ['-'],
         'fechas de pagos': ['-'],
-        'deudas por fiador': ['-'],
+        'deudas por fiador': [0],
         'fiador de': ['-'],
         'anotaciones': ['-']
     })
@@ -102,8 +103,8 @@ def r_cuotas(s):
             return 'debe'
         case _:
             return ' '
-def string_calendario_usuario(index: int = 0):
 
+def string_calendario_usuario(index: int = 0):
     with open('ajustes.json', 'r') as f:
         ajustes = json.load(f)
         calendario = ajustes['calendario']
@@ -161,6 +162,7 @@ def crear_data_frame_principal():
             'multas_extra': [],
             'numero_telefonico': [],
             'prestamos hechos': [],
+            'dinero en prestamos': [],
             'deudas en prestamos': [],
             'intereses vencidos': [],
             'revisiones de intereses': [],
@@ -186,7 +188,7 @@ def crear_ajustes_de_el_programa():
                'tope de intereses': 20000000,
                'clave de acceso': '1234',
                'calendario': '-',
-               'usuarios': 11,
+               'usuarios': 0,
                'anular usuarios': False,
                'cobrar multas': False,
                'fecha de cierre': '2024/12/01'}
@@ -389,8 +391,10 @@ def formulario_de_pago(index: int, cuotas: int, multas: int, tesorero: str):
 
         st.rerun()
 
-def crear_nuevo_cheque(nombre: str = '', numero: int = 0, multas_pagadas: int = 0, valor_multa: int = 0,
-                       cuotas_pagadas: int = 0, valor_cuota: int = 0, puestos: int = 0, tesorero: int = 1):
+def crear_nuevo_cheque(
+        nombre: str = '', numero: int = 0, multas_pagadas: int = 0, valor_multa: int = 0,
+        cuotas_pagadas: int = 0, valor_cuota: int = 0, puestos: int = 0, tesorero: int = 1
+):
     cheque = ['===========================',
               '=                         =',
               '=    FONDO SAN JAVIER     =',
@@ -503,49 +507,34 @@ def modificar_str_compuesto_multiple(s: str, index_1: int, index_2: int, nuevo_v
 def consultar_capital(index):
     df = pd.read_csv(st.session_state.nombre_df)
     capital = df['capital'][index]
+    estado = df['estado'][index]
+
+    if estado != 'activo':
+        return 2
 
     deudas_en_prestamos = df['deudas en prestamos'][index]
-    tabla_por_prestamos = {}
+    tabla_por_prestamos = 0
     if deudas_en_prestamos != '-':
         deudas_en_prestamos = list(map(int, deudas_en_prestamos.split('-')))
-        k = 1
-        for i in deudas_en_prestamos:
-            tabla_por_prestamos[str(k)] = i
-            k += 1
-        tabla_por_prestamos['Total'] = sum(deudas_en_prestamos)
-    else:
-        tabla_por_prestamos['Total'] = 0
+        tabla_por_prestamos = sum(deudas_en_prestamos)
 
-    deudas_por_fiador = df['deudas por fiador'][index]
-    tabla_por_fiador = {}
-    if deudas_por_fiador != '-':
-        deudas_por_fiador = list(map(int, deudas_por_fiador.split('-')))
-        k = 1
-        for i in deudas_por_fiador:
-            tabla_por_fiador[str(k)] = i
-            k += 1
-        tabla_por_fiador['Total'] = sum(deudas_por_fiador)
-    else:
-        tabla_por_fiador['Total'] = 0
+    deudas_por_fiador = int(df['deudas por fiador'][index])
 
     interese_vencidos = df['intereses vencidos'][index]
-    tabla_interese = {}
+    tabla_interese = 0
     if interese_vencidos != '-':
         interese_vencidos = list(map(float, interese_vencidos.split('-')))
-        k = 1
-        for i in interese_vencidos:
-            tabla_interese[str(k)] = i
-            k += 1
-        tabla_interese['Total'] = sum(interese_vencidos)
-    else:
-        tabla_interese['Total'] = 0
+        tabla_interese = sum(interese_vencidos)
 
-    capital_disponible = int(capital * 0.75 - tabla_por_prestamos['Total'] - tabla_por_fiador['Total'] -
-                             tabla_interese['Total'])
+    capital_disponible = int(
+        capital * 0.75 - tabla_por_prestamos - deudas_por_fiador - tabla_interese
+    )
 
     return capital_disponible
 
-def generar_prestamo(index: int, valor_de_el_prestamo: int, fiadores: str = '', deudas_con_fiadores: str = ''):
+def generar_prestamo(
+        index: int, valor_de_el_prestamo: int, fiadores: str = '', deudas_con_fiadores: str = ''
+):
     df = pd.read_csv(st.session_state.nombre_df)
 
     with open('ajustes.json', 'r') as f:
@@ -622,6 +611,10 @@ def generar_prestamo(index: int, valor_de_el_prestamo: int, fiadores: str = '', 
             deuda_con_fiadores += '-n'
     df.loc[index, 'deudas con fiadores'] = deuda_con_fiadores
 
+    dinero_en_prestamos = int(df['dinero en prestamos'][index])
+    dinero_en_prestamos += valor_de_el_prestamo
+    df.loc[index, 'dinero en prestamos'] = dinero_en_prestamos
+
     df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
 
     df.to_csv(st.session_state.nombre_df)
@@ -631,34 +624,64 @@ def viavilidad_dinero(index: int, valor_de_el_prestamo: int, fiadores: str = '',
     capital = consultar_capital(index=index)
 
     if (fiadores == '') and (deudas_con_fiadores == ''):
-        if capital > valor_de_el_prestamo:
+        if capital >= valor_de_el_prestamo:
             return True
         else:
+            st.error(
+                f'''
+                Usted puede retirar {'{:,}'.format(capital)} para hacer un prestamo y quiere
+                relizar un prestamo por {'{:,}'.format(valor_de_el_prestamo)}, solicite 
+                fiadores para hacer su prestamo, de otra manera no sera posible.
+                '''
+            , icon="🚨")
             return False
     else:
         try:
             n_fiadores = list(map(lambda x: int(x), fiadores.split(',')))
             n_deudas = list(map(lambda x: int(x), deudas_con_fiadores.split(',')))
 
+            if len(set(n_fiadores)) != len(n_fiadores):
+                st.error(f'No pueden haber fiadores repetidos.', icon="🚨")
+                return False
+
             for i, j in zip(n_fiadores, n_deudas):
                 temporal_capital = consultar_capital(i)
                 if temporal_capital <= j:
+                    st.error(f'El fiador №-{i} no tiene dinero para este prestamo.', icon="🚨")
+                    break
+                elif temporal_capital < 0:
+                    st.error(f'El fiador №-{i} tiene saldo negativo.', icon="🚨")
+                    break
+                elif temporal_capital == 2:
+                    st.error(f'El fiador №-{i} esta desactivado.', icon="🚨")
+                    break
+                elif i == index:
+                    st.error(f'No se puede ser fiador de si mismo.', icon="🚨")
                     break
             else:
                 suma_de_deudas = sum(n_deudas)
-                if (capital + suma_de_deudas) >= valor_de_el_prestamo:
+                if suma_de_deudas > valor_de_el_prestamo:
+                    st.error(f'La deuda con fiadores supera el valor de el prestamo.', icon="🚨")
+                    return False
+                elif (capital + suma_de_deudas) >= valor_de_el_prestamo:
                     return True
                 else:
+                    st.error(f'Apesar de tener fiadores no alcanza para este prestamo.', icon="🚨")
                     return False
             return False
         except:
+            st.error(
+                '''
+                El formato de fiadores y deudas con ellas esta mal escrito, por favor confirme que
+                todo este en regla.'''
+            , icon="🚨")
             return False
 
 def escribir_deudas_fiadores(index: int, fiadores: str, deudas_con_fiadores: str):
     df = pd.read_csv(st.session_state.nombre_df)
 
     fiadores = list(map(lambda x: int(x), fiadores.split(',')))
-    deudas_con_fiadores = list(map(lambda x: str(x), deudas_con_fiadores.split(',')))
+    deudas_con_fiadores = list(map(lambda x: int(x), deudas_con_fiadores.split(',')))
 
     index = str(index)
 
@@ -670,11 +693,8 @@ def escribir_deudas_fiadores(index: int, fiadores: str, deudas_con_fiadores: str
             fiador_de += f'-{index}'
         df.loc[i, 'fiador de'] = fiador_de
 
-        deudas_con = df['deudas por fiador'][i]
-        if deudas_con == '-':
-            deudas_con = j
-        else:
-            deudas_con += f'-{j}'
+        deudas_con = int(df['deudas por fiador'][i])
+        deudas_con += j
         df.loc[i, 'deudas por fiador'] = deudas_con
 
     df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
@@ -682,7 +702,9 @@ def escribir_deudas_fiadores(index: int, fiadores: str, deudas_con_fiadores: str
     df.to_csv(st.session_state.nombre_df)
 
 @st.experimental_dialog("Formulario de prestamo.")
-def formato_de_prestamo(index: int, valor_de_el_prestamo: int, fiadores: str, deudas_con_fiadores: str):
+def formato_de_prestamo(
+        index: int, valor_de_el_prestamo: int, fiadores: str, deudas_con_fiadores: str
+):
     df = pd.read_csv(st.session_state.nombre_df)
 
     st.header(f'№ {index} - {df['nombre'][index].title()}')
@@ -711,7 +733,16 @@ def formato_de_prestamo(index: int, valor_de_el_prestamo: int, fiadores: str, de
     st.divider()
     st.write(f'Fiadores: {fiadores}')
     st.write(f'Deudas con fiadores: {deudas_con_fiadores}')
+
     st.divider()
+    st.info(
+        '''
+        Por favor asegurese de entregar el dinero, haber impreso la carta y 
+        confirmar que todos los datos sean correctos, ya que de haberse equivocado
+        todas las correcciones se tendran que hacer de manera manual en "Modificar socios"
+        y no es nada agradable hacer eso manualmete
+        '''
+    , icon="ℹ️")
 
     if st.button('confirmar'):
         generar_prestamo(index=index, valor_de_el_prestamo=valor_de_el_prestamo,
@@ -722,3 +753,107 @@ def formato_de_prestamo(index: int, valor_de_el_prestamo: int, fiadores: str, de
             escribir_deudas_fiadores(index=index, fiadores=fiadores,
                                  deudas_con_fiadores=deudas_con_fiadores)
         st.rerun()
+
+def pagar_a_str_comp(s: str, pago: int):
+    s = list(map(lambda x: int(x), s.split(',')))
+
+    i = 0
+    while True:
+        if pago >= s[i]:
+            pago -= s[i]
+            s[i] = 0
+        else:
+            s[i] -= pago
+            break
+        i += 1
+
+    s = list(map(lambda x: str(x), s))
+    return ','.join(s)
+
+def abonar_deuda(index: int = 0, prestamo_n: int = 0, abono: int = 0):
+    df = pd.read_csv(st.session_state.nombre_df)
+
+    deuda_actual = df['deudas en prestamos'][index]
+    intereses_vencidos = df['intereses vencidos'][index]
+    fiadores = df['fiadores'][index]
+    deudas_con_fiadores = df['deudas con fiadores'][index]
+
+    deuda_actual = deuda_actual.split('-')
+    intereses_vencidos = intereses_vencidos.split('-')
+    fiadores = fiadores.split('-')
+    deudas_con_fiadores = deudas_con_fiadores.split('-')
+
+    n_d_a = int(deuda_actual[prestamo_n])
+    n_i_v = int(intereses_vencidos[prestamo_n])
+
+    if not (0 < abono <= (n_i_v + n_d_a)):
+        st.error('No creo que abonar esa cantidad sea correcto.', icon="🚨")
+        return None
+
+    n_f = fiadores[prestamo_n]
+    n_d_f = deudas_con_fiadores[prestamo_n].split(',')
+
+    n_f = [] if n_f == 'n' else list(map(lambda x: int(x), n_f.split(',')))
+
+    d_f = 0 if n_d_f == ['n'] else sum(map(lambda x: int(x), n_d_f))
+
+    if abono >= n_i_v:
+        abono -= n_i_v
+        n_i_v = 0
+    else:
+        n_i_v -= abono
+        abono = 0
+    intereses_vencidos[prestamo_n] = str(n_i_v)
+    df.loc[index, 'intereses vencidos'] = '-'.join(intereses_vencidos)
+
+    abono_a_fiadores = d_f if abono >= d_f else abono
+    if deudas_con_fiadores[prestamo_n] != 'n':
+        deudas_con_fiadores[prestamo_n] = pagar_a_str_comp(
+            deudas_con_fiadores[prestamo_n], abono_a_fiadores
+        )
+        df.loc[index, 'deudas con fiadores'] = '-'.join(deudas_con_fiadores)
+
+    n_d_a -= abono
+    deuda_actual[prestamo_n] = str(int(n_d_a))
+    df.loc[index, 'deudas en prestamos'] = '-'.join(deuda_actual)
+
+    n_d_f = [] if n_d_f == ['n'] else list(map(lambda x: int(x), n_d_f))
+    for i, j in zip(n_f, n_d_f):
+        deuda_de_fiador = int(df['deudas por fiador'][i])
+        if abono_a_fiadores >= j:
+            deuda_de_fiador -= j
+            abono_a_fiadores -= j
+            df.loc[i, 'deudas por fiador'] = deuda_de_fiador
+        else:
+            deuda_de_fiador -= abono_a_fiadores
+            df.loc[i, 'deudas por fiador'] = deuda_de_fiador
+            break
+
+    df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
+
+    df.to_csv(st.session_state.nombre_df)
+
+    st.rerun()
+
+@st.experimental_dialog("Formulario de abono.")
+def formulario_de_abono(
+        index: int = 0, prestamo_n: int = 0, abono: int = 0, nombre: str = ''
+):
+    st.title(nombre)
+
+    st.divider()
+    st.write(f'Desea abonar {'{:,}'.format(abono)} a el prestamo № {prestamo_n}?')
+
+    st.divider()
+    st.info(
+        '''
+        Por favor asegurese de recibir el dinero y certificar los datos ya que
+        aceptado el abono no hay vuelta atraz.
+        '''
+    , icon="ℹ️")
+
+    st.divider()
+    if st.button('Abonar'):
+        abonar_deuda(
+            index=index, prestamo_n=prestamo_n, abono=abono
+        )

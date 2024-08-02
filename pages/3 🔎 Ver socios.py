@@ -26,7 +26,9 @@ with tab_1:
         st.table(df[['nombre','puestos', 'numero_telefonico', 'estado', 'capital']])
     else:
         nuevo_data_frame = df[df['nombre'].str.contains(nombre_a_buscar, case=False, na=False)]
-        st.table(nuevo_data_frame[['nombre', 'puestos', 'numero_telefonico', 'estado', 'capital']])
+        st.table(nuevo_data_frame[
+                     ['nombre', 'puestos', 'numero_telefonico', 'estado', 'capital']
+                 ])
 
 with tab_2:
 

@@ -36,7 +36,7 @@ except:
 if not (control_1 and control_2 and control_3):
 
     st.header('Creacion de archivos para control y almacenamiento.')
-    # st.info('P', icon="ℹ️")
+    # 3
     c1_1, c1_2, c1_3 = st.columns(3)
 
     with c1_1:
@@ -116,7 +116,9 @@ else:
                 else:
                     n_dobles = [n_fecha_doble_1, n_fecha_doble_2]
 
-                    fechas = Funciones.crear_listado_de_fechas(primera_fecha=n_fecha_inicial, dobles=n_dobles)
+                    fechas = Funciones.crear_listado_de_fechas(
+                        primera_fecha=n_fecha_inicial, dobles=n_dobles
+                    )
                     s_fechas = '-'.join(fechas)
                     ajustes['calendario'] = s_fechas
 
@@ -129,7 +131,10 @@ else:
 
             st.header('Valor de la cuota por puesto y por multa.')
 
-            st.info('Por favor al ingresar cantidades en miles no ingrese las comas, solo el numero plano.', icon="ℹ️")
+            st.info(
+                'Por favor al ingresar cantidades en miles no ingrese las comas, solo el numero plano.',
+                icon="ℹ️"
+            )
 
             st.subheader('Por puesto.')
 
@@ -186,7 +191,9 @@ else:
         with tab_4:
             st.header('Tope de intereses.')
 
-            st.write(f'Tope de diferencia entre intereses de prestamo: {'{:,}'.format(ajustes['tope de intereses'])}')
+            st.write(
+                f'Tope de diferencia entre intereses de prestamo: {'{:,}'.format(ajustes['tope de intereses'])}'
+            )
 
             nuevo_tope = st.number_input('Nuevo tope de intereses.', value=0, step=1)
 

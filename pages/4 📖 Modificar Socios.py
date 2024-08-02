@@ -57,8 +57,11 @@ else:
                 paso_2 = True
 
             if paso_1 and paso_2:
-                Funciones.insertar_socios(nombre=nuevo_usuario_nombre, puestos=nuevo_usuario_puestos,
-                                          numero_telefonico=nuevo_usuario_telefono)
+                Funciones.insertar_socios(
+                    nombre=nuevo_usuario_nombre,
+                    puestos=nuevo_usuario_puestos,
+                    numero_telefonico=nuevo_usuario_telefono
+                )
                 st.balloons()
                 #st.success('El usuario ha sido añadido.', icon="✅")
                 st.toast('Nuevo socio añadido', icon='🎉')
@@ -70,20 +73,26 @@ else:
 
         index_row = st.number_input('Index de la fila.', value=0, step=1)
 
-        columna_col = st.selectbox('Columna a modificar', ('nombre', 'puestos', 'numero_telefonico', 'revisiones', 'cuotas', 'multas',
-                                   'tesorero', 'estado', 'capital', 'aporte_a_multas', 'deudas', 'multas_extra', 'prestamos hechos',
-                                   'deudas en prestamos','intereses vencidos','revisiones de intereses',
-                                   'intereses en prestamos', 'fiadores', 'deudas con fiadores', 'fechas de pagos', 'deudas por fiador',
-                                   'fiador de', 'anotaciones'))
+        columna_col = st.selectbox('Columna a modificar', (
+            'nombre', 'puestos', 'numero_telefonico', 'revisiones', 'cuotas', 'multas',
+            'tesorero', 'estado', 'capital', 'aporte_a_multas', 'deudas', 'multas_extra',
+            'prestamos hechos', 'deudas en prestamos', 'intereses vencidos',
+            'revisiones de intereses', 'intereses en prestamos', 'fiadores',
+            'deudas con fiadores', 'fechas de pagos', 'deudas por fiador',
+            'fiador de', 'anotaciones'
+        ))
 
         st.subheader('Modificar texto.')
 
         nuevo_valor_texto = st.text_input('Nuevo valor de texto.')
 
         if st.button('Modificar texto'):
-            if columna_col in ['nombre', 'cuotas', 'multas', 'tesorero', 'estado', 'numero_telefonico', 'deudas en prestamos',
-                               'intereses en prestamos', 'fiadores', 'deudas con fiadores', 'fechas de pagos', 'deudas por fiador',
-                               'intereses vencidos', 'revisiones de intereses', 'fiador de', 'anotaciones']:
+            if columna_col in [
+                'nombre', 'cuotas', 'multas', 'tesorero', 'estado', 'numero_telefonico',
+                'deudas en prestamos', 'intereses en prestamos', 'fiadores',
+                'deudas con fiadores', 'fechas de pagos', 'intereses vencidos',
+                'revisiones de intereses', 'fiador de', 'anotaciones'
+            ]:
                 df.at[index_row, columna_col] = str(nuevo_valor_texto)
                 df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
                 df.to_csv(st.session_state.nombre_df)
@@ -97,7 +106,10 @@ else:
         nuevo_valor_numero = st.number_input('Nuevo valor numerico.', value=0, step=1)
 
         if st.button('Modificar numero'):
-            if columna_col in ['puestos', 'revisiones', 'capital', 'aporte_a_multas', 'deudas', 'multas_extra', 'prestamos hechos']:
+            if columna_col in [
+                'puestos', 'revisiones', 'capital', 'aporte_a_multas', 'deudas',
+                'multas_extra', 'prestamos hechos', 'deudas por fiador'
+            ]:
                 df.at[index_row, columna_col] = nuevo_valor_numero
                 df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
                 df.to_csv(st.session_state.nombre_df)

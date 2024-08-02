@@ -14,15 +14,19 @@ index_de_usuario = st.sidebar.number_input('Numero de usuario.', value=0, step=1
 
 if st.sidebar.button('Buscar'):
     if 0 <= index_de_usuario < st.session_state.usuarios:
-        st.session_state.usuario_actual_prestamos = index_de_usuario
-        st.rerun()
+        if df['estado'][index_de_usuario] == 'activo':
+            st.session_state.usuario_actual_prestamos = index_de_usuario
+            st.rerun()
+        else:
+            st.error(f'El usuario № {index_de_usuario} no esta activo.', icon="🚨")
     else:
         st.error('El numero de usuario esta fuera de rango.', icon="🚨")
 
 if index == -1:
     st.title('Usuario Indeterminado')
 else:
-    st.title(f'№ {index} - {df['nombre'][index].title()}')
+    nombre_usuario = df['nombre'][index].title()
+    st.title(f'№ {index} - {nombre_usuario}')
 
     prestamos_hechos = df['prestamos hechos'][index]
     capital = df['capital'][index]
@@ -39,17 +43,7 @@ else:
     else:
         tabla_por_prestamos['Total'] = 0
 
-    deudas_por_fiador = str(df['deudas por fiador'][index])
-    tabla_por_fiador = {}
-    if deudas_por_fiador != '-':
-        deudas_por_fiador = list(map(int, deudas_por_fiador.split('-')))
-        k = 1
-        for i in deudas_por_fiador:
-            tabla_por_fiador[str(k)] = i
-            k += 1
-        tabla_por_fiador['Total'] = sum(deudas_por_fiador)
-    else:
-        tabla_por_fiador['Total'] = 0
+    deudas_por_fiador = int(df['deudas por fiador'][index])
 
     interese_vencidos = str(df['intereses vencidos'][index])
     tabla_interese = {}
@@ -63,7 +57,7 @@ else:
     else:
         tabla_interese['Total'] = 0
 
-    capital_disponible = int(capital*0.75 - tabla_por_prestamos['Total'] - tabla_por_fiador['Total'] -
+    capital_disponible = int(capital*0.75 - tabla_por_prestamos['Total'] - deudas_por_fiador -
                              tabla_interese['Total'])
 
     interes_por_prestamo = str(df['intereses en prestamos'][index]).split('-')
@@ -86,6 +80,14 @@ else:
                               'numero(s) de fiador(es)': fiadores[k],
                               'deuda(s) con fiador(es)': deudas_con_fiadores[k],
                               'fechas de pago': fechas_de_pago[k]})
+                    ide_abono = st.number_input(f'Abono a prestamo № {k}', value=0, step=1)
+                    if st.button('Abonar', key=f'{k}0000'):
+                        if ide_abono < 1:
+                            st.error('No se puede abonar tal cantidad' , icon="🚨")
+                        else:
+                            Funciones.formulario_de_abono(
+                                index=index, prestamo_n=k, abono=ide_abono, nombre=nombre_usuario
+                            )
                 k += 1
 
     with tab_2:
@@ -103,23 +105,14 @@ else:
                     st.error('Creo que no se puede dar esa cantidad de dinero.', icon="🚨")
             else:
                 control_dinero = False
-                if Funciones.viavilidad_dinero(index=index, valor_de_el_prestamo=valor_de_el_prestamo,
-                                               fiadores=ide_fiadores, deudas_con_fiadores=ide_deudas_con_fiadores):
-                    control_dinero = True
-                    st.success('El prestamo es economicamente viable.', icon="✅")
-                else:
-                    st.error(
-                        '''
-                        El prestamo no puede hacerse por temas economicos, revise que el capital disponible es 
-                        suficiente para realizar el prestamo o que el formato de los fiadores y sus deudas esta
-                        bien tramitado ya que esto tambien genera errores''',
-                        icon="🚨"
+                if Funciones.viavilidad_dinero(
+                        index=index, valor_de_el_prestamo=valor_de_el_prestamo,
+                        fiadores=ide_fiadores, deudas_con_fiadores=ide_deudas_con_fiadores
+                ):
+                    Funciones.formato_de_prestamo(
+                        index=index, valor_de_el_prestamo=valor_de_el_prestamo,
+                        fiadores=ide_fiadores, deudas_con_fiadores=ide_deudas_con_fiadores
                     )
-
-                if control_dinero:
-                    st.balloons()
-                    Funciones.formato_de_prestamo(index=index, valor_de_el_prestamo=valor_de_el_prestamo,
-                                                  fiadores=ide_fiadores, deudas_con_fiadores=ide_deudas_con_fiadores)
 
     with tab_3:
         st.subheader('Capital.')
@@ -128,14 +121,13 @@ else:
 
         st.subheader('Descuentos.')
 
+        st.write(f'Descuento por fiador: {'{:,}'.format(deudas_por_fiador)}.')
+        st.write(f'Fiador de: {df['fiador de'][index]}')
+
         st.write('Descuentos por prestamos.')
         st.table(tabla_por_prestamos)
-
-        st.write('Descuentos por fiador.')
-        st.table(tabla_por_fiador)
 
         st.write('Descuentos por intereses vencidos.')
         st.table(tabla_interese)
 
         st.header(f'Capital disponible para retirar: {"{:,}".format(capital_disponible)}')
-

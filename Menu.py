@@ -36,6 +36,16 @@ tab_1, tab_2 = st.tabs(['Que es el menu?', 'Informacion de el programa'])
 with tab_1:
     st.header('Que es el menu?')
 
-    st.text('El menu es la parte de el programa dedicada a cargar los datos necesarios para la \n'
-            'cache y para el funcionamiento de el programa de esta menera el programa puede\n'
-            'funcionar tambien en este apartado se puede encontrar informacion sobre el programa.')
+    st.text(
+        '''
+        El menu es la parte de el programa dedicada a cargar los datos necesarios para la
+        cache y para el funcionamiento de el programa de esta menera el programa puede
+        funcionar por eso es recomendable volver a el menu despues de crear cualuier archivo
+        de control o almacenamiento, tambien en este apartado se puede encontrar informacion
+        sobre el programa como videos de youtube y puede subir a la nuve la base de datos
+        actual.
+        '''
+    )
+
+    if st.button('📤 Guardar en la nuve'):
+        pass
