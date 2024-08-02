@@ -75,7 +75,9 @@ else:
         with open('ajustes.json', 'r') as f:
             ajustes = json.load(f)
 
-        tab_1, tab_2, tab_3, tab_4, tab_5, tab_6 = st.tabs(['Calendario', 'Cuotas y multas', 'Contraseñas', 'Intereses', 'Usuarios', 'fechas'])
+        tab_1, tab_2, tab_3, tab_4, tab_5, tab_6 = st.tabs([
+            'Calendario', 'Cuotas y multas', 'Contraseñas', 'Intereses', 'Usuarios', 'fechas'
+        ])
 
         with tab_1:
             st.header('Calendario')
@@ -215,7 +217,7 @@ else:
 
             st.subheader('Modificar el interes.')
 
-            nuevo_interes_m_tope = st.number_input('Nuevo interes.', value=0.0, step=0.01, key='00010')
+            nuevo_interes_m_tope = st.number_input('Nuevo interes.', value=0, step=1, key='00010')
 
             if st.button('Modificar.', key='00004'):
                 ajustes['interes < tope'] = nuevo_interes_m_tope
@@ -233,7 +235,7 @@ else:
 
             st.subheader('Modificar el interes.')
 
-            nuevo_interes_M_tope = st.number_input('Nuevo interes.', value=0.0, step=0.01, key='00009')
+            nuevo_interes_M_tope = st.number_input('Nuevo interes.', value=0, step=1, key='00009')
 
             if st.button('Modificar.', key='00008'):
                 ajustes['interes > tope'] = nuevo_interes_M_tope

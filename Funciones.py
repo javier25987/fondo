@@ -228,8 +228,8 @@ def arreglar_asuntos(index_usuario: int, cobrar_multas: bool):
 
     fecha_actual = datetime.datetime.now()
 
-    semanas_a_revisar = list(map(lambda x: x > fecha_actual, calendario))
-    semanas_a_revisar = sum([1 for i in semanas_a_revisar if i == False])
+    semanas_a_revisar = list(map(lambda x: x < fecha_actual, calendario))
+    semanas_a_revisar = sum(map(lambda x: int(x), semanas_a_revisar))
 
     if semanas_a_revisar > semanas_revisadas:
         for i in range(50):
@@ -715,10 +715,10 @@ def formato_de_prestamo(
     with open('ajustes.json', 'r') as f:
         ajustes = json.load(f)
 
-    interes = ajustes['interes < tope']
+    interes = ajustes['interes < tope']/1000
 
     if ajustes['tope de intereses'] < valor_de_el_prestamo:
-        interes = ajustes['interes > tope']
+        interes = ajustes['interes > tope']/1000
 
     st.write(f'Interes por prestamo: {interes}')
 
@@ -799,12 +799,28 @@ def abonar_deuda(index: int = 0, prestamo_n: int = 0, abono: int = 0):
 
     if abono >= n_i_v:
         abono -= n_i_v
+        aporte_a_multa_extra = n_i_v
         n_i_v = 0
     else:
         n_i_v -= abono
+        aporte_a_multa_extra = abono
         abono = 0
+    print(f'este es el aporte a multas {aporte_a_multa_extra}')
     intereses_vencidos[prestamo_n] = str(n_i_v)
     df.loc[index, 'intereses vencidos'] = '-'.join(intereses_vencidos)
+
+    if aporte_a_multa_extra > 0:
+        print('el if se activo')
+        multas_extra = int(df['multas_extra'][index])
+        multas_extra += aporte_a_multa_extra
+        df.loc[index, 'multas_extra'] = multas_extra
+
+        anotaciones = str(df['anotaciones'][index])
+        if anotaciones == '-':
+            anotaciones = f'Pago {'{:,}'.format(aporte_a_multa_extra)} por intereses vencidos,'
+        else:
+            anotaciones += f'-Pago {'{:,}'.format(aporte_a_multa_extra)} por intereses vencidos,'
+        df.loc[index, 'anotaciones'] = anotaciones
 
     abono_a_fiadores = d_f if abono >= d_f else abono
     if deudas_con_fiadores[prestamo_n] != 'n':
@@ -857,3 +873,57 @@ def formulario_de_abono(
         abonar_deuda(
             index=index, prestamo_n=prestamo_n, abono=abono
         )
+
+def arreglar_prestamos(index: int):
+    df = pd.read_csv(st.session_state.nombre_df)
+
+    prestamos_hechos = int(df['prestamos hechos'][index])
+    if prestamos_hechos == 0:
+        return None
+
+    deudas_en_prestamos = df['deudas en prestamos'][index]
+    deudas_en_prestamos = list(map(lambda x: int(x), deudas_en_prestamos.split('-')))
+
+    intereses_vencidos = df['intereses vencidos'][index]
+    intereses_vencidos = list(map(lambda x: int(x), intereses_vencidos.split('-')))
+
+    intereses_en_prestamos = df['intereses en prestamos'][index]
+    intereses_en_prestamos = list(map(lambda x: int(x), intereses_en_prestamos.split('-')))
+
+    revisiones_de_intereses = df['revisiones de intereses'][index]
+    revisiones_de_intereses = list(map(lambda x: int(x), revisiones_de_intereses.split('-')))
+
+    fechas_de_pagos = df['fechas de pagos'][index]
+    fechas_pasadas = []
+    fecha_actual = datetime.datetime.now()
+    lista_fechas = fechas_de_pagos.split('-')
+    for i in lista_fechas:
+        tem_data = i.split(',')
+        tem_data = list(map(lambda x: list(map(lambda y: int(y), x.split('/'))), tem_data))
+        tem_data = list(map(lambda x: datetime.datetime(*x), tem_data))
+
+        fechas_anteriores = list(map(lambda x: x < fecha_actual, tem_data))
+        fechas_anteriores = sum(map(lambda x: int(x), fechas_anteriores))
+
+        fechas_pasadas.append(fechas_anteriores)
+
+    for i in range(prestamos_hechos):
+        if fechas_pasadas[i] > revisiones_de_intereses[i]:
+            d = deudas_en_prestamos[i]
+            if d > 0:
+                intereses_vencidos[i] += int(d*(intereses_en_prestamos[i]/1000))
+            revisiones_de_intereses[i] = fechas_pasadas[i]
+
+    deudas_en_prestamos = '-'.join(list(map(lambda x: str(x), deudas_en_prestamos)))
+    intereses_vencidos = '-'.join(list(map(lambda x: str(x), intereses_vencidos)))
+    revisiones_de_intereses = '-'.join(list(map(lambda x: str(x), revisiones_de_intereses)))
+
+    df.loc[index, 'deudas en prestamos'] = deudas_en_prestamos
+    df.loc[index, 'intereses vencidos'] = intereses_vencidos
+    df.loc[index, 'revisiones de intereses'] = revisiones_de_intereses
+
+    df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
+
+    df.to_csv(st.session_state.nombre_df)
+
+

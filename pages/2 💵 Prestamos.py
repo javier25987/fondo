@@ -15,6 +15,7 @@ index_de_usuario = st.sidebar.number_input('Numero de usuario.', value=0, step=1
 if st.sidebar.button('Buscar'):
     if 0 <= index_de_usuario < st.session_state.usuarios:
         if df['estado'][index_de_usuario] == 'activo':
+            Funciones.arreglar_prestamos(index=index_de_usuario)
             st.session_state.usuario_actual_prestamos = index_de_usuario
             st.rerun()
         else:
@@ -61,9 +62,12 @@ else:
                              tabla_interese['Total'])
 
     interes_por_prestamo = str(df['intereses en prestamos'][index]).split('-')
+    if interes_por_prestamo != ['', '']:
+        interes_por_prestamo = list(map(lambda x: int(x)/1000, interes_por_prestamo))
     fiadores = str(df['fiadores'][index]).split('-')
-    deudas_con_fiadores = str(df['deudas con fiadores'][index]).split('-')
-    fechas_de_pago = str(df['fechas de pagos'][index]).split('-')
+    deudas_con_fiadores = df['deudas con fiadores'][index].split('-')
+    fechas_de_pago = df['fechas de pagos'][index].split('-')
+    fechas_de_pago = list(map(lambda x: str(x), fechas_de_pago))
 
     tab_1, tab_2, tab_3 = st.tabs(['Ver prestamos', 'Solicitar un prestamo', 'Consultar capital'])
 
@@ -74,12 +78,14 @@ else:
             k = 0
             for tab_i in st.tabs([f'prestamo №{i}' for i in range(prestamos_hechos)]):
                 with tab_i:
+                    print('aca esta el problema')
                     st.table({'deuda de el prestamo': deudas_en_prestamos[k],
                               'interes por prestamo': interes_por_prestamo[k],
                               'intereses vencidos': interese_vencidos[k],
                               'numero(s) de fiador(es)': fiadores[k],
                               'deuda(s) con fiador(es)': deudas_con_fiadores[k],
                               'fechas de pago': fechas_de_pago[k]})
+                    print('-----')
                     ide_abono = st.number_input(f'Abono a prestamo № {k}', value=0, step=1)
                     if st.button('Abonar', key=f'{k}0000'):
                         if ide_abono < 1:

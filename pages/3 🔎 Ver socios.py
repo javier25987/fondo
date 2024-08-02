@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import Funciones
 
 st.set_page_config(layout="wide")
 
@@ -7,7 +8,24 @@ st.session_state['preguntar clave'] = True
 
 df = pd.read_csv(st.session_state.nombre_df)
 
-tab_1, tab_2 = st.tabs(['Buscar socios', 'Estado de cuenta'])
+index = st.session_state.usuario_actual_ver
+
+index_de_usuario = st.sidebar.number_input('Numero de usuario.', value=0, step=1)
+
+if st.sidebar.button('Buscar', key='00011'):
+    if 0 <= index_de_usuario < st.session_state.usuarios:
+        if df['estado'][index_de_usuario] == 'activo':
+            Funciones.arreglar_prestamos(index=index_de_usuario)
+            st.session_state.usuario_actual_ver = index_de_usuario
+            st.rerun()
+        else:
+            st.error(f'El usuario № {index_de_usuario} no esta activo.', icon="🚨")
+    else:
+        st.error('El numero de usuario esta fuera de rango.', icon="🚨")
+
+tab_1, tab_2, tab_3, tab_4 = st.tabs([
+    'Buscar socios', 'Estado de cuenta', 'Anotaciones', 'Ver si necesita acuerdo'
+])
 
 with tab_1:
     c_1, c_2 = st.columns(2, vertical_alignment="bottom")
@@ -26,19 +44,15 @@ with tab_1:
         st.table(df[['nombre','puestos', 'numero_telefonico', 'estado', 'capital']])
     else:
         nuevo_data_frame = df[df['nombre'].str.contains(nombre_a_buscar, case=False, na=False)]
-        st.table(nuevo_data_frame[
-                     ['nombre', 'puestos', 'numero_telefonico', 'estado', 'capital']
-                 ])
+        st.table(nuevo_data_frame[[
+            'nombre', 'puestos', 'numero_telefonico', 'estado', 'capital'
+        ]])
 
-with tab_2:
+    with tab_2:
+        pass
 
-    index = st.session_state.usuario_actual_ver
+    with tab_3:
+        pass
 
-    index_de_usuario = st.sidebar.number_input('Numero de usuario.', value=0, step=1)
-
-    if st.sidebar.button('Buscar', key='00011'):
-        if 0 <= index_de_usuario < st.session_state.usuarios:
-            st.session_state.usuario_actual_ver = index_de_usuario
-            st.rerun()
-        else:
-            st.error('El numero de usuario esta fuera de rango.', icon="🚨")
+    with tab_4:
+        pass

@@ -1,0 +1,12 @@
+'prestamos hechos': [],
+            'dinero en prestamos': [],
+            'deudas en prestamos': [],
+            'intereses vencidos': [],
+            'revisiones de intereses': [],
+            'intereses en prestamos': [],
+            'fiadores': [],
+            'deudas con fiadores': [],
+            'fechas de pagos': [],
+            'deudas por fiador': [],
+            'fiador de': [],
+            'anotaciones': []

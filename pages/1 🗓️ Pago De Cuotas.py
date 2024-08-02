@@ -22,7 +22,7 @@ if st.sidebar.button('Buscar'):
             df = pd.read_csv(st.session_state.nombre_df)
             if st.session_state.anular_usuarios and (df['multas'][index_de_usuario].count('n') < 47):
                 Funciones.desactivar_susuario(index_usuario=index_de_usuario)
-                st.session_state.usuario_actual_cuotas = -1
+                st.session_state.usuario_actual_cuotas = -2
             else:
                 st.session_state.usuario_actual_cuotas = index_de_usuario
             st.rerun()
@@ -32,11 +32,10 @@ if st.sidebar.button('Buscar'):
         st.error('El numero de usuario esta fuera de rango.', icon="🚨")
 
 if index == -1:
-    st.title('Usuario indeterminado o desactivado')
+    st.title('Usuario indeterminado')
+elif index == -2:
+    st.title('Usuario desactivado 🚨')
 else:
-    if st.session_state.n_activo:
-        st.info('Este usuario esta desactivado, solo es posible la visualizacion', icon="ℹ️")
-
     nombre_usuario = df['nombre'][index].title()
     st.title(f'№ {index} - {nombre_usuario} : {df['puestos'][index]} puesto(s)')
     st.header(f'Numero de telefono: {df['numero_telefonico'][index]}')
@@ -45,7 +44,6 @@ else:
 
     st.table(Funciones.string_calendario_usuario(index=index))
 
-    #if not st.session_state.n_activo:
     numero_cuotas_a_pagar = sum(1 for i in df['cuotas'][index] if i != 'p')
     numero_cuotas_a_pagar = 10 if numero_cuotas_a_pagar > 10 else numero_cuotas_a_pagar
 
@@ -75,46 +73,3 @@ else:
             )
     if c_2.button('Abrir ultimo cheque'):
         os.system('notepad.exe cheque_de_cuotas.txt')
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
