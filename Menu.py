@@ -17,11 +17,7 @@ st.session_state.tope = ajustes['tope de intereses']
 st.session_state.usuarios = ajustes['usuarios']
 st.session_state.anular_usuarios = ajustes['anular usuarios']
 st.session_state.cobrar_multas = ajustes['cobrar multas']
-
-with open('ArchivoControl.txt', 'r') as f:
-    nombre_dataframe = f.readlines()[1].strip()
-
-st.session_state.nombre_df = nombre_dataframe
+st.session_state.nombre_df = ajustes['nombre df']
 
 st.session_state.nombre_para_busqueda = ''
 

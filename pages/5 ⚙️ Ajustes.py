@@ -7,56 +7,40 @@ st.set_page_config(layout="wide")
 
 st.title('Ajustes')
 
-control_1, control_2, control_3 = False, False, False
+control_1, control_2 = False, False
 
 try:
-    open('ArchivoControl.txt', 'r')
+    open('ajustes.json', 'r')
 
     control_1 = True
 except:
-    st.error('Se necesita un archivo de control.', icon="🚨")
+    st.error('Se necesita un archivo de ajustes.', icon="🚨")
 
 try:
-    with open('ArchivoControl.txt', 'r') as f:
-        nombre_dataframe = f.readlines()[1].strip()
+    with open('ajustes.json', 'r') as j_a:
+        ajustes = json.load(j_a)
 
-    df = pd.read_csv(nombre_dataframe)
+    df = pd.read_csv(ajustes['nombre df'])
 
     control_2 = True
 except:
     st.error('Se necesita una tabla de socios.', icon="🚨")
 
-try:
-    open('ajustes.json', 'r')
-
-    control_3 = True
-except:
-    st.error('Se necesita un archivo de ajustes.', icon="🚨")
-
-if not (control_1 and control_2 and control_3):
+if not (control_1 and control_2):
 
     st.header('Creacion de archivos para control y almacenamiento.')
-    # 3
-    c1_1, c1_2, c1_3 = st.columns(3)
+
+    c1_1, c1_2 = st.columns(2)
 
     with c1_1:
-        if st.button('Crear el archivo de control'):
-            try:
-                open('ArchivoControl.txt', 'r')
-            except:
-                with open('ArchivoControl.txt', 'w') as f:
-                    f.write('1')
-            st.success('El archivo ha sido creado', icon="✅")
+        if st.button('crear ajustes de el programa'):
+            Funciones.crear_ajustes_de_el_programa()
+            st.success('Los ajustes han sido configurados', icon="✅")
 
     with c1_2:
         if st.button('Crear nueva tabla de socios'):
             Funciones.crear_data_frame_principal()
             st.success('La tabla ha sido creada', icon="✅")
-
-    with c1_3:
-        if st.button('crear ajustes de el programa'):
-            Funciones.crear_ajustes_de_el_programa()
-            st.success('Los ajustes han sido configurados', icon="✅")
 
 else:
     if st.session_state['preguntar clave']:
@@ -75,8 +59,9 @@ else:
         with open('ajustes.json', 'r') as f:
             ajustes = json.load(f)
 
-        tab_1, tab_2, tab_3, tab_4, tab_5, tab_6 = st.tabs([
-            'Calendario', 'Cuotas y multas', 'Contraseñas', 'Intereses', 'Usuarios', 'fechas'
+        tab_1, tab_2, tab_3, tab_4, tab_5, tab_6, tab_7 = st.tabs([
+            'Calendario', 'Cuotas y multas', 'Contraseñas', 'Intereses', 'Usuarios',
+            'Fechas', 'Tabla de socios'
         ])
 
         with tab_1:
@@ -194,7 +179,9 @@ else:
             st.header('Tope de intereses.')
 
             st.write(
-                f'Tope de diferencia entre intereses de prestamo: {'{:,}'.format(ajustes['tope de intereses'])}'
+                f'Tope de diferencia entre intereses de prestamo: {
+                '{:,}'.format(ajustes['tope de intereses'])
+                }'
             )
 
             nuevo_tope = st.number_input('Nuevo tope de intereses.', value=0, step=1)
@@ -318,6 +305,37 @@ else:
                 n_fecha = n_fecha.strftime('%Y/%m/%d')
                 ajustes['fecha de cierre'] = n_fecha
 
+                with open('ajustes.json', 'w') as f:
+                    json.dump(ajustes, f)
+
+                st.success('Valor modificado.', icon="✅")
+                st.rerun()
+
+        with tab_7:
+            st.subheader('Nombre de la tabla.')
+
+            st.write(f'Tabla de trabajo actual: {ajustes['nombre df']}')
+
+            n_nombre_tabla = st.text_input('Nuevo nombre.')
+
+            if st.button('Modificar', key='00015'):
+                ajustes['nombre df'] = n_nombre_tabla
+                st.session_state.nombre_df = n_nombre_tabla
+
+                with open('ajustes.json', 'w') as f:
+                    json.dump(ajustes, f)
+
+                st.success('Valor modificado.', icon="✅")
+                st.rerun()
+
+            st.subheader('Numero de generacion.')
+
+            st.write(f'Numero de generacion actual: {ajustes['numero de creacion']}')
+
+            n_numero_gen = st.number_input('Nuevo numero de generacion.', value=0, step=1)
+
+            if st.button('Modificar', key='00016'):
+                ajustes['numero de creacion'] = n_numero_gen
                 with open('ajustes.json', 'w') as f:
                     json.dump(ajustes, f)
 

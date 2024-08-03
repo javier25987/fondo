@@ -9,10 +9,6 @@ def modificar_string(s: str, index_s: int, new_elemento: str):
     return ''.join(lista_s)
 
 def fecha_string_formato(fecha: str):
-    """
-    :param fecha: es una fecha dada en el formato ano/mes/dia/hora (en el formato 24 horas)
-    :return:
-    """
     s = fecha.split('/')
     s = list(map(int, s))
     return datetime.datetime(*s)
@@ -45,10 +41,8 @@ def insertar_socios(nombre: str = '', puestos: int = 1, numero_telefonico: str =
         numero_telefonico = '_'
     nombre = nombre.lower()
 
-    with open('ArchivoControl.txt', 'r') as f:
-        nombre_data_frame = f.readlines()[1].strip()
-
     nuevo_usuario = pd.DataFrame({
+        'numero': [st.session_state.usuarios],
         'nombre': [nombre],
         'puestos': [puestos],
         'revisiones': [0],
@@ -63,6 +57,7 @@ def insertar_socios(nombre: str = '', puestos: int = 1, numero_telefonico: str =
         'numero_telefonico': [numero_telefonico],
         'prestamos hechos': [0],
         'dinero en prestamos': [0],
+        'dinero por si mismo': [0],
         'deudas en prestamos': ['-'],
         'intereses vencidos': ['-'],
         'revisiones de intereses': ['-'],
@@ -75,10 +70,10 @@ def insertar_socios(nombre: str = '', puestos: int = 1, numero_telefonico: str =
         'anotaciones': ['-']
     })
 
-    data_frame = pd.read_csv(nombre_data_frame)
+    data_frame = pd.read_csv(st.session_state.nombre_df)
     data_frame = pd.concat([data_frame, nuevo_usuario], ignore_index = True)
     data_frame = data_frame.loc[:, ~data_frame.columns.str.contains('^Unnamed')]
-    data_frame.to_csv(nombre_data_frame)
+    data_frame.to_csv(st.session_state.nombre_df)
 
     with open('ajustes.json', 'r') as f:
         ajustes = json.load(f)
@@ -109,10 +104,7 @@ def string_calendario_usuario(index: int = 0):
         ajustes = json.load(f)
         calendario = ajustes['calendario']
 
-    with open('ArchivoControl.txt', 'r') as f:
-        nombre_dataframe = f.readlines()[1].strip()
-
-    df = pd.read_csv(nombre_dataframe)
+    df = pd.read_csv(st.session_state.nombre_df)
 
     calendario = calendario.split('-')
     calendario = list(map(lambda x: x[:-3], calendario))
@@ -139,16 +131,20 @@ def string_calendario_usuario(index: int = 0):
 def crear_data_frame_principal():
     nombre = 'FONDO_'
     try:
-        with open('ArchivoControl.txt', 'r') as file:
-            lineas = file.readlines()
-            lineas[0] = lineas[0].strip()
+        with open('ajustes.json', 'r') as file:
+            ajustes = json.load(file)
+            lineas = str(ajustes['numero de creacion'])
 
-        nombre = nombre + lineas[0] + '_' + datetime.datetime.now().strftime('%Y') + '.csv'
+        nombre = nombre + lineas + '_' + datetime.datetime.now().strftime('%Y') + '.csv'
 
-        with open('ArchivoControl.txt', 'w') as file:
-            file.write(str(int(lineas[0]) + 1) + '\n' + nombre)
+        ajustes['numero de creacion'] += 1
+        ajustes['nombre df'] = nombre
+
+        with open('ajustes.json', 'w') as file:
+            json.dump(ajustes, file)
 
         df = pd.DataFrame({
+            'numero': [],
             'nombre': [],
             'puestos': [],
             'revisiones': [],
@@ -163,6 +159,7 @@ def crear_data_frame_principal():
             'numero_telefonico': [],
             'prestamos hechos': [],
             'dinero en prestamos': [],
+            'dinero por si mismo': [],
             'deudas en prestamos': [],
             'intereses vencidos': [],
             'revisiones de intereses': [],
@@ -178,20 +175,22 @@ def crear_data_frame_principal():
         df.to_csv(nombre)
 
     except:
-        st.error('No se encuentra el archivo de control', icon="🚨")
+        st.error('No se encuentran los ajustes', icon="🚨")
 
 def crear_ajustes_de_el_programa():
     ajustes = {'valor multa': 3000,
                'valor cuota': 10000,
-               'interes < tope': 0.03,
-               'interes > tope': 0.02,
+               'interes < tope': 30,
+               'interes > tope': 20,
                'tope de intereses': 20000000,
                'clave de acceso': '1234',
                'calendario': '-',
                'usuarios': 0,
                'anular usuarios': False,
                'cobrar multas': False,
-               'fecha de cierre': '2024/12/01'}
+               'fecha de cierre': '2024/12/01',
+               'numero de creacion': 1,
+               'nombre df': ''}
 
     with open('ajustes.json', 'w') as j_a:
         json.dump(ajustes, j_a)
@@ -207,10 +206,11 @@ def sumar_una_multa(s: list, semana: int = 0):
     return s
 
 def arreglar_asuntos(index_usuario: int, cobrar_multas: bool):
-    with open('ArchivoControl.txt', 'r') as f:
-        nombre_dataframe = f.readlines()[1].strip()
+    with open('ajustes.json', 'r') as f:
+        ajustes = json.load(f)
+        calendario = ajustes['calendario'].split('-')
 
-    df = pd.read_csv(nombre_dataframe)
+    df = pd.read_csv(ajustes['nombre df'])
 
     cuotas = df['cuotas'][index_usuario]
     multas = df['multas'][index_usuario]
@@ -218,10 +218,6 @@ def arreglar_asuntos(index_usuario: int, cobrar_multas: bool):
     multas = [i for i in multas]
 
     semanas_revisadas = int(df['revisiones'][index_usuario])
-
-    with open('ajustes.json', 'r') as f:
-        ajustes = json.load(f)
-        calendario = ajustes['calendario'].split('-')
 
     calendario = list(map(lambda x: list(map(lambda y: int(y), x.split('/'))), calendario))
     calendario = list(map(lambda x: datetime.datetime(*x), calendario))
@@ -253,21 +249,16 @@ def arreglar_asuntos(index_usuario: int, cobrar_multas: bool):
 
         df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
 
-        df.to_csv(nombre_dataframe)
-    else:
-        pass
+        df.to_csv(ajustes['nombre df'])
 
 def desactivar_susuario(index_usuario: int):
-    with open('ArchivoControl.txt', 'r') as f:
-        nombre_dataframe = f.readlines()[1].strip()
-
-    df = pd.read_csv(nombre_dataframe)
+    df = pd.read_csv(st.session_state.nombre_df)
 
     df.loc[index_usuario, 'estado'] = 'no activo'
 
     df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
 
-    df.to_csv(nombre_dataframe)
+    df.to_csv(st.session_state.nombre_df)
 
 def contar_multas(s: str):
     k = [i for i in s if i != 'n']
@@ -333,10 +324,7 @@ def poner_tesorero(s: str, n: int, tesorero: str):
 
 @st.experimental_dialog("Formulario de pago.")
 def formulario_de_pago(index: int, cuotas: int, multas: int, tesorero: str):
-    with open('ArchivoControl.txt', 'r') as f:
-        nombre_dataframe = f.readlines()[1].strip()
-
-    df = pd.read_csv(nombre_dataframe)
+    df = pd.read_csv(st.session_state.nombre_df)
 
     st.header(f'№ {index} - {df['nombre'][index].title()}')
     st.divider()
@@ -387,7 +375,7 @@ def formulario_de_pago(index: int, cuotas: int, multas: int, tesorero: str):
 
         df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
 
-        df.to_csv(nombre_dataframe)
+        df.to_csv(st.session_state.nombre_df)
 
         st.rerun()
 
@@ -490,20 +478,6 @@ def calendario_n_meses():
     fechas = ','.join(fechas)
     return  fechas
 
-def modificar_str_compuesto_simple(s: str, index: int, nuevo_valor: str):
-    s = s.split('-')
-    s[index] = nuevo_valor
-    s = '-'.join(s)
-    return  s
-
-def modificar_str_compuesto_multiple(s: str, index_1: int, index_2: int, nuevo_valor: str):
-    s = s.split('-')
-    s = list(map(lambda x: x.split(','), s))
-    s[index_1][index_2] = nuevo_valor
-    s = list(map(lambda x: ','.join(x), s))
-    s = '-'.join(s)
-    return s
-
 def consultar_capital(index):
     df = pd.read_csv(st.session_state.nombre_df)
     capital = df['capital'][index]
@@ -512,7 +486,7 @@ def consultar_capital(index):
     if estado != 'activo':
         return 2
 
-    deudas_en_prestamos = df['deudas en prestamos'][index]
+    deudas_en_prestamos = str(df['deudas en prestamos'][index])
     tabla_por_prestamos = 0
     if deudas_en_prestamos != '-':
         deudas_en_prestamos = list(map(int, deudas_en_prestamos.split('-')))
@@ -533,7 +507,7 @@ def consultar_capital(index):
     return capital_disponible
 
 def generar_prestamo(
-        index: int, valor_de_el_prestamo: int, fiadores: str = '', deudas_con_fiadores: str = ''
+    index: int, valor_de_el_prestamo: int, fiadores: str = '', deudas_con_fiadores: str = ''
 ):
     df = pd.read_csv(st.session_state.nombre_df)
 
@@ -550,6 +524,14 @@ def generar_prestamo(
     else:
         deudas_en_prestamos +=  f'-{str(valor_de_el_prestamo)}'
     df.loc[index, 'deudas en prestamos'] = deudas_en_prestamos
+
+    if deudas_con_fiadores == '':
+        dinero_a_restar = 0
+    else:
+        dinero_a_restar = sum(map(lambda x: int(x), deudas_con_fiadores.split(',')))
+    dinero_por_si_mismo = df['dinero por si mismo'][index]
+    dinero_por_si_mismo += valor_de_el_prestamo - dinero_a_restar
+    df.loc[index, 'dinero por si mismo'] = dinero_por_si_mismo
 
     intereses_vencidos = str(df['intereses vencidos'][index])
     if intereses_vencidos == '-':
@@ -752,6 +734,7 @@ def formato_de_prestamo(
         else:
             escribir_deudas_fiadores(index=index, fiadores=fiadores,
                                  deudas_con_fiadores=deudas_con_fiadores)
+        st.toast('Prestamo realizado con exito.')
         st.rerun()
 
 def pagar_a_str_comp(s: str, pago: int):
@@ -773,10 +756,10 @@ def pagar_a_str_comp(s: str, pago: int):
 def abonar_deuda(index: int = 0, prestamo_n: int = 0, abono: int = 0):
     df = pd.read_csv(st.session_state.nombre_df)
 
-    deuda_actual = df['deudas en prestamos'][index]
-    intereses_vencidos = df['intereses vencidos'][index]
-    fiadores = df['fiadores'][index]
-    deudas_con_fiadores = df['deudas con fiadores'][index]
+    deuda_actual = str(df['deudas en prestamos'][index])
+    intereses_vencidos = str(df['intereses vencidos'][index])
+    fiadores = str(df['fiadores'][index])
+    deudas_con_fiadores = str(df['deudas con fiadores'][index])
 
     deuda_actual = deuda_actual.split('-')
     intereses_vencidos = intereses_vencidos.split('-')
@@ -805,12 +788,10 @@ def abonar_deuda(index: int = 0, prestamo_n: int = 0, abono: int = 0):
         n_i_v -= abono
         aporte_a_multa_extra = abono
         abono = 0
-    print(f'este es el aporte a multas {aporte_a_multa_extra}')
     intereses_vencidos[prestamo_n] = str(n_i_v)
     df.loc[index, 'intereses vencidos'] = '-'.join(intereses_vencidos)
 
     if aporte_a_multa_extra > 0:
-        print('el if se activo')
         multas_extra = int(df['multas_extra'][index])
         multas_extra += aporte_a_multa_extra
         df.loc[index, 'multas_extra'] = multas_extra
@@ -873,6 +854,7 @@ def formulario_de_abono(
         abonar_deuda(
             index=index, prestamo_n=prestamo_n, abono=abono
         )
+        st.rerun()
 
 def arreglar_prestamos(index: int):
     df = pd.read_csv(st.session_state.nombre_df)
@@ -882,16 +864,16 @@ def arreglar_prestamos(index: int):
         return None
 
     deudas_en_prestamos = df['deudas en prestamos'][index]
-    deudas_en_prestamos = list(map(lambda x: int(x), deudas_en_prestamos.split('-')))
+    deudas_en_prestamos = list(map(lambda x: int(x), str(deudas_en_prestamos).split('-')))
 
     intereses_vencidos = df['intereses vencidos'][index]
-    intereses_vencidos = list(map(lambda x: int(x), intereses_vencidos.split('-')))
+    intereses_vencidos = list(map(lambda x: int(x), str(intereses_vencidos).split('-')))
 
     intereses_en_prestamos = df['intereses en prestamos'][index]
-    intereses_en_prestamos = list(map(lambda x: int(x), intereses_en_prestamos.split('-')))
+    intereses_en_prestamos = list(map(lambda x: int(x), str(intereses_en_prestamos).split('-')))
 
     revisiones_de_intereses = df['revisiones de intereses'][index]
-    revisiones_de_intereses = list(map(lambda x: int(x), revisiones_de_intereses.split('-')))
+    revisiones_de_intereses = list(map(lambda x: int(x), str(revisiones_de_intereses).split('-')))
 
     fechas_de_pagos = df['fechas de pagos'][index]
     fechas_pasadas = []
@@ -909,9 +891,10 @@ def arreglar_prestamos(index: int):
 
     for i in range(prestamos_hechos):
         if fechas_pasadas[i] > revisiones_de_intereses[i]:
+            diferencia = fechas_pasadas[i] - revisiones_de_intereses[i]
             d = deudas_en_prestamos[i]
             if d > 0:
-                intereses_vencidos[i] += int(d*(intereses_en_prestamos[i]/1000))
+                intereses_vencidos[i] += int(d*(intereses_en_prestamos[i]/1000)*diferencia)
             revisiones_de_intereses[i] = fechas_pasadas[i]
 
     deudas_en_prestamos = '-'.join(list(map(lambda x: str(x), deudas_en_prestamos)))
@@ -926,4 +909,16 @@ def arreglar_prestamos(index: int):
 
     df.to_csv(st.session_state.nombre_df)
 
+def modificar_str_compuesto_simple(s: str, index: int, nuevo_valor: str):
+    s = s.split('-')
+    s[index] = nuevo_valor
+    s = '-'.join(s)
+    return  s
 
+def modificar_str_compuesto_multiple(s: str, index_1: int, index_2: int, nuevo_valor: str):
+    s = s.split('-')
+    s = list(map(lambda x: x.split(','), s))
+    s[index_1][index_2] = nuevo_valor
+    s = list(map(lambda x: ','.join(x), s))
+    s = '-'.join(s)
+    return s
