@@ -3,6 +3,7 @@ import streamlit as st
 import subprocess
 import datetime
 import json
+import os
 
 def modificar_string(s: str, index_s: int, new_elemento: str):
     lista_s = [i for i in s]
@@ -941,37 +942,6 @@ def modificar_str_compuesto_multiple(s: str, index_1: int, index_2: int, nuevo_v
     s = '-'.join(s)
     return s
 
-"""
-            with st.status("Cargando tabla...", expanded=True) as status:
-                st.write('Abriendo conexion...')
-                time.sleep(1)
-
-                st.write("Certificando token...")
-                token = ajustes['token']
-                dbx = dropbox.Dropbox(token)
-
-                st.write("Abriendo y cargando archivo...")
-                try:
-                    with open(ajustes['nombre df'], 'rb') as f:
-                        ajustes['tablas guardadas'] += 1
-                        ahora = datetime.datetime.now()
-                        fecha_hora_str = ahora.strftime("%Y-%m-%d_%H:%M:%S")
-                        dbx.files_upload(
-                            f.read(),
-                            f'/{ajustes['tablas guardadas']}_{fecha_hora_str}_{ajustes['nombre df']}'
-                        )
-                    with open('ajustes.json', 'w') as f:
-                        json.dump(ajustes, f)
-                        f.close()
-                except:
-                    st.error(
-                        'El token no esta activo por favor espere a que la pagina se refresque y cree uno nuevo.',
-                        icon="🚨"
-                    )
-                    time.sleep(4)
-                    st.rerun()
-"""
-
 def ejecutar_comando_git(comando):
     proceso = subprocess.Popen(comando, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     salida, error = proceso.communicate()
@@ -1001,3 +971,46 @@ def obtener_estado_de_cuenta(index: int):
     deudas_con_fiadores = df['deudas con fiadores'][index]
     deudas_por_fiador = df['deudas por fiador'][index]
     fiador_de = df['fiador de'][index]
+
+def carta_para_solicitud_de_prestamo():
+    ahora = datetime.datetime.now()
+    fecha_hora_str = ahora.strftime("%Y-%m-%d %H:%M:%S")
+    carta = [
+        fecha_hora_str + '\n',
+        '\n',
+        'Señores de el fondo, yo _____________________________ usuari@ № _______ de el fondo San Javier\n',
+        '\n',
+        'solicito un prestamo por el valor de _______________, tengo la intencion de pagar el prestamo\n',
+        '\n',
+        'en _______ mes(es) si mi dinero no llegase a ser suficiente solicito como fiador(es) con las\n',
+        '\n',
+        'siguientes deudas a:\n',
+        '\n',
+        '          Nombre                    Numero                    Deuda',
+        '-------------------------------------------------------------------------------------\n',
+        '\n',
+        '-------------------------------------------------------------------------------------\n',
+        '\n',
+        '-------------------------------------------------------------------------------------\n',
+        '\n',
+        '-------------------------------------------------------------------------------------\n',
+        '\n',
+        '-------------------------------------------------------------------------------------\n',
+        '\n',
+        '-------------------------------------------------------------------------------------\n',
+        '\n',
+        '\n',
+        '\n',
+        '\n',
+        '\n',
+        '\n',
+        '\n',
+        '\n',
+        '          _________________________                         _________________________\n',
+        '           socio de el fondo                                 señores de el fondo'
+    ]
+    with open('carta_prestamo.txt' 'w') as f:
+        f.writelines(''.join(carta))
+        f.close()
+
+    os.system('notepad.exe carta_prestamo.txt')
