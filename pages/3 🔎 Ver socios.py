@@ -23,8 +23,8 @@ if st.sidebar.button('Buscar', key='00011'):
     else:
         st.error('El numero de usuario esta fuera de rango.', icon="🚨")
 
-tab_1, tab_2, tab_3, tab_4 = st.tabs([
-    'Buscar socios', 'Estado de cuenta', 'Anotaciones', 'Ver si necesita acuerdo'
+tab_1, tab_2, tab_3 = st.tabs([
+    'Buscar socios', 'Anotaciones', 'Ver si necesita acuerdo'
 ])
 
 with tab_1:
@@ -48,57 +48,54 @@ with tab_1:
             'numero', 'nombre', 'puestos', 'numero_telefonico', 'estado', 'capital'
         ]])
 
-    with tab_2:
-        pass
+with tab_2:
+    if index == -1:
+        st.title('Usuario indeterminado')
+    else:
+        st.title(f'№ {index} - {df['nombre'][index].title()}')
+        st.header(f'Multas extra: {'{:,}'.format(df['multas_extra'][index])}')
+        st.divider()
 
-    with tab_3:
-        if index == -1:
-            st.title('Usuario indeterminado')
-        else:
-            st.title(f'№ {index} - {df['nombre'][index].title()}')
-            st.header(f'Multas extra: {'{:,}'.format(df['multas_extra'][index])}')
-            st.divider()
+        col_1, col_2 = st.columns(2)
+        with col_1:
+            n_anotacion = st.text_input('Nueva anotacion.')
 
-            col_1, col_2 = st.columns(2)
-            with col_1:
-                n_anotacion = st.text_input('Nueva anotacion.')
+        with col_2:
+            n_monto_a_multas = st.number_input('Monto a sumar a multas', value=0, step=1)
 
-            with col_2:
-                n_monto_a_multas = st.number_input('Monto a sumar a multas', value=0, step=1)
-
-            if st.button('Hacer nueva anotacion'):
-                if n_monto_a_multas >= 0:
-                    anotacion_h = df['anotaciones'][index]
-                    if anotacion_h == '-':
-                        anotacion_h = f'{n_anotacion} ~> {'{:,}'.format(n_monto_a_multas)}'
-                    else:
-                        anotacion_h += f'-{n_anotacion} ~> {'{:,}'.format(n_monto_a_multas)}'
-                    df.loc[index, 'anotaciones'] = anotacion_h
-
-                    multas_extra = int(df['multas_extra'][index])
-                    multas_extra += n_monto_a_multas
-                    df.loc[index, 'multas_extra'] = multas_extra
-
-                    df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
-                    df.to_csv(st.session_state.nombre_df)
-                    st.rerun()
+        if st.button('Hacer nueva anotacion'):
+            if n_monto_a_multas >= 0:
+                anotacion_h = df['anotaciones'][index]
+                if anotacion_h == '-':
+                    anotacion_h = f'{n_anotacion} ~> {'{:,}'.format(n_monto_a_multas)}'
                 else:
-                    st.error('El monto no puede ser negativo.', icon="🚨")
+                    anotacion_h += f'-{n_anotacion} ~> {'{:,}'.format(n_monto_a_multas)}'
+                df.loc[index, 'anotaciones'] = anotacion_h
+
+                multas_extra = int(df['multas_extra'][index])
+                multas_extra += n_monto_a_multas
+                df.loc[index, 'multas_extra'] = multas_extra
+
+                df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
+                df.to_csv(st.session_state.nombre_df)
+                st.rerun()
+            else:
+                st.error('El monto no puede ser negativo.', icon="🚨")
+        st.divider()
+
+        anotaciones = df['anotaciones'][index].split('-')
+
+        for i in anotaciones:
+            st.write(i)
             st.divider()
 
-            anotaciones = df['anotaciones'][index].split('-')
-
-            for i in anotaciones:
-                st.write(i)
-                st.divider()
-
-    with tab_4:
-        tabla_acuerdo = df[df['dinero por si mismo'] < df['capital']//2]
-        st.info(
-            """
-            Los siguientes usuarios no han retirado en prestamos la mitad de su capital
-            """
-        , icon="ℹ️")
-        st.table(tabla_acuerdo[[
-            'numero', 'nombre', 'capital', 'dinero por si mismo', 'numero_telefonico'
-        ]])
+with tab_3:
+    tabla_acuerdo = df[df['dinero por si mismo'] < df['capital']//2]
+    st.info(
+        """
+        Los siguientes usuarios no han retirado en prestamos la mitad de su capital
+        """
+    , icon="ℹ️")
+    st.table(tabla_acuerdo[[
+        'numero', 'nombre', 'capital', 'dinero por si mismo', 'numero_telefonico'
+    ]])

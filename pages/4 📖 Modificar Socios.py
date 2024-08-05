@@ -26,6 +26,7 @@ else:
 
     with open('ajustes.json', 'r') as f:
         ajustes = json.load(f)
+        f.close()
 
     st.session_state.usuarios = ajustes['usuarios']
 

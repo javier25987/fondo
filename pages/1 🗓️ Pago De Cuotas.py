@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import os
 import Funciones
+import time
 
 st.set_page_config(layout="wide")
 
@@ -38,7 +39,14 @@ elif index == -2:
 else:
     nombre_usuario = df['nombre'][index].title()
     st.title(f'№ {index} - {nombre_usuario} : {df['puestos'][index]} puesto(s)')
-    st.header(f'Numero de telefono: {df['numero_telefonico'][index]}')
+
+    col_1, col_2 = st.columns([8, 2], vertical_alignment='bottom')
+    with col_1:
+        st.header(f'Numero de telefono: {df['numero_telefonico'][index]}')
+    with col_2:
+        if st.button('Estado de cuenta'):
+            with st.spinner('Obteniendo estado de cuenta...'):
+                time.sleep(10)
 
     st.divider()
 
@@ -72,4 +80,5 @@ else:
                 tesorero=tesorero_a_pagar
             )
     if c_2.button('Abrir ultimo cheque'):
-        os.system('notepad.exe cheque_de_cuotas.txt')
+        with st.spinner('Abriendo cheque...'):
+            os.system('notepad.exe cheque_de_cuotas.txt')
