@@ -198,9 +198,9 @@ def crear_ajustes_de_el_programa():
                'fecha de cierre': '2024/12/01',
                'numero de creacion': 1,
                'nombre df': '',
-               'token': '',
-               'tablas guardadas': 0,
-               'tablas a guardar': 10
+               'path programa': '',
+               'enlace repo': '',
+               'commits hechos': 0
                }
 
     with open('ajustes.json', 'w') as j_a:
