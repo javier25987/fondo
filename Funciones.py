@@ -277,6 +277,8 @@ def desactivar_susuario(index_usuario: int):
 
 def contar_multas(s: str):
     k = [i for i in s if i != 'n']
+    if not k:
+        return 0
     k = sum(map(int, k))
 
     return k
@@ -451,7 +453,7 @@ def crear_nuevo_cheque(
     cheque = list(map(lambda x: x + '\n', cheque))
     cheque[-1] = cheque[-1].strip()
 
-    with open('cheque_de_cuotas.txt', 'w', encoding='utf_8') as f:
+    with open('cheque_de_cuotas.txt', 'a', encoding='utf_8') as f:
         f.write(''.join(cheque))
         f.close()
 
@@ -954,23 +956,49 @@ def ejecutar_comando_git(comando):
 def obtener_estado_de_cuenta(index: int):
     df = pd.read_csv(st.session_state.nombre_df)
 
-    nombre  = df['nombre'][index]
-    puestos = df['puestos'][index]
-    cuotas = df['cuotas'][index]
-    multas = df['multas'][index]
-    estado = df['estado'][index]
-    capital = df['capital'][index]
-    aporte_a_multas = df['aporte_a_multas'][index]
-    multas_extra = df['multas_extra'][index]
-    numero_telefonico = df['numero_telefonico'][index]
-    prestamos_hechos = df['prestamos_hechos'][index]
-    dinero_retirado_en_prestamos = df['dinero en prestamos'][index]
-    deudas_en_prestamos = df['deudas en prestamos'][index]
-    intereses_vencidos = df['intereses vencidos'][index]
-    fiadores = df['fiadores'][index]
-    deudas_con_fiadores = df['deudas con fiadores'][index]
-    deudas_por_fiador = df['deudas por fiador'][index]
-    fiador_de = df['fiador de'][index]
+    ahora = datetime.datetime.now()
+    fecha_hora_str = ahora.strftime("%Y-%m-%d %H:%M:%S")
+
+    formato = [
+        f'============================== Fondo San Javier ==============================\n',
+        '\n',
+        f'     № {df['numero'][index]}: {df['nombre'][index].title()} - {df['puestos'][index]} puesto(s)\n',
+        '\n',
+        f'los siguientes datos son validos para la fecha "{fecha_hora_str}" para otras\n',
+        f'fechas diferentes no se confirma su veracidad.\n',
+        f'\n',
+        f'Pago de cuotas:\n',
+        f'- Cuotas pagas: {df['cuotas'][index].count('p')}\n',
+        f'- Cuotas que se deben: {df['cuotas'][index].count('d')}\n',
+        f'- Multas pendientes: {contar_multas(df['multas'][index])}\n',
+        f'- Estado: {df['estado'][index]}\n',
+        f'- Capital: {'{:,}'.format(df['capital'][index])}\n',
+        f'- Dinero pagado en multas: {'{:,}'.format(df['aporte_a_multas'][index])}\n',
+        f'- Multas extra: {'{:,}'.format(df['multas_extra'][index])} \n',
+        f'- Numero de telefono: {df['numero_telefonico'][index]}\n',
+        f'\n',
+        f'Prestamos:\n',
+        f'- Prestamos solitados: {df['prestamos_hechos'][index]}\n',
+        f'- Dinero retirado en prestamos: {'{:,}'.format(df['dinero en prestamos'][index])}\n',
+        f'- Deudas actuales en prestamos: {df['deudas en prestamos'][index]}\n',
+        f'- intereses vencidos por un prestamos: {df['intereses vencidos'][index]}\n',
+        f'- fiadores por prestamos: {df['fiadores'][index]}\n',
+        f'- deudas con fiadores: {df['deudas con fiadores'][index]}\n',
+        f'\n',
+        f'- deudas por fiador: {'{:,}'.format(df['deudas por fiador'][index])}\n',
+        f'- fiador de: {df['fiador de'][index]}\n',
+        f'\n',
+        f'\n',
+        f'\n',
+        f'\n',
+
+    ]
+
+    with open('estado de cuenta.txt', 'w') as f:
+        f.write(''.join(formato))
+        f.close()
+
+    os.system('notepad.exe estado de cuenta.txt')
 
 def carta_para_solicitud_de_prestamo():
     ahora = datetime.datetime.now()
@@ -980,23 +1008,23 @@ def carta_para_solicitud_de_prestamo():
         '\n',
         'Señores de el fondo, yo _____________________________ usuari@ № _______ de el fondo San Javier\n',
         '\n',
-        'solicito un prestamo por el valor de _______________, tengo la intencion de pagar el prestamo\n',
+        'solicito un prestamo por el valor de _______________, con el interes de ______ % tengo la \n',
         '\n',
-        'en _______ mes(es) si mi dinero no llegase a ser suficiente solicito como fiador(es) con las\n',
+        'intencion de pagar el prestamo en _______ mes(es) si mi dinero no llegase a ser suficiente\n',
         '\n',
-        'siguientes deudas a:\n',
+        'solicito como fiador(es) con las siguientes deudas a:\n',
         '\n',
-        '          Nombre                    Numero                    Deuda',
+        '          Nombre                    Numero                    Deuda\n',
         '-------------------------------------------------------------------------------------\n',
-        '\n',
+        '                              |                 |\n',
         '-------------------------------------------------------------------------------------\n',
-        '\n',
+        '                              |                 |\n',
         '-------------------------------------------------------------------------------------\n',
-        '\n',
+        '                              |                 |\n',
         '-------------------------------------------------------------------------------------\n',
-        '\n',
+        '                              |                 |\n',
         '-------------------------------------------------------------------------------------\n',
-        '\n',
+        '                              |                 |\n',
         '-------------------------------------------------------------------------------------\n',
         '\n',
         '\n',
@@ -1009,8 +1037,9 @@ def carta_para_solicitud_de_prestamo():
         '          _________________________                         _________________________\n',
         '           socio de el fondo                                 señores de el fondo'
     ]
-    with open('carta_prestamo.txt' 'w') as f:
-        f.writelines(''.join(carta))
+
+    with open('carta_prestamo.txt', 'w') as f:
+        f.write(''.join(carta))
         f.close()
 
     os.system('notepad.exe carta_prestamo.txt')

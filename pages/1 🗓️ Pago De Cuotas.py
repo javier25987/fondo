@@ -46,7 +46,7 @@ else:
     with col_2:
         if st.button('Estado de cuenta'):
             with st.spinner('Obteniendo estado de cuenta...'):
-                time.sleep(10)
+                Funciones.obtener_estado_de_cuenta(index=index)
 
     st.divider()
 
