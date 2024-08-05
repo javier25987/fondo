@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import os
 import Funciones
-import time
 
 st.set_page_config(layout="wide")
 
